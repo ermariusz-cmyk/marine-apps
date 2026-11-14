@@ -10,6 +10,8 @@ sw.js                 tryb offline
 manifest.webmanifest  ikona i nazwa po dodaniu do ekranu głównego
 assets/               ikony strony
 dp-footprint/         DP Footprint Plot
+port-clearance/       Port Clearance (FAL 1–7, Maritime Declaration of Health)
+                      originals/ – wzory formularzy, z których odwzorowano wydruk
 ```
 
 ## Jak dodać nową aplikację
