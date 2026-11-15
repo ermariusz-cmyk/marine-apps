@@ -1,0 +1,12 @@
+{
+  "name": "Torque Wrench",
+  "short_name": "Torque",
+  "start_url": "./",
+  "scope": "./",
+  "display": "minimal-ui",
+  "background_color": "#14232d",
+  "theme_color": "#14232d",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
