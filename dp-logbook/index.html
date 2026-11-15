@@ -82,6 +82,11 @@ main{max-width:860px;margin:0 auto;padding:14px calc(14px + env(safe-area-inset-
 .row{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr) 40px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
 .row.new{background:var(--hl)}
+.ins{position:absolute;left:34px;top:-11px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--accent);
+  font:700 16px/1 var(--font);padding:0;opacity:.6;z-index:3;display:flex;align-items:center;justify-content:center}
+.ins::after{content:"";position:absolute;inset:-10px -14px}
+.row:hover .ins,.ins:focus-visible,.ins:hover{opacity:1}
+.ins:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .row:first-child.new{border-radius:12px 12px 0 0}.row:last-child.new{border-radius:0 0 12px 12px}.row:only-child.new{border-radius:12px}
 .time{width:100%;border:1px solid transparent;background:var(--fill);border-radius:8px;height:42px;text-align:center;font:600 16px var(--mono);padding:0}
 .time.bad{border-color:var(--danger)}
@@ -489,6 +494,7 @@ function render() {
   }
   list.innerHTML = d.entries.map((e) =>
     '<div class="row' + (e.id === newId ? " new" : "") + '" data-id="' + e.id + '">' +
+      '<button class="ins" type="button" aria-label="Insert an entry above this one" title="Insert an entry here">+</button>' +
       '<div><input class="time" inputmode="numeric" maxlength="5" placeholder="--:--" aria-label="Time" autocomplete="off" value="' + esc(e.t) + '">' +
       (e.t ? "" : '<button class="now" type="button">Now</button>') + "</div>" +
       '<textarea class="txt" rows="1" placeholder="Event – type or pick from the list" aria-label="Event" autocomplete="off">' + esc(e.text) + "</textarea>" +
@@ -577,6 +583,15 @@ $("addNow").onclick = () => addEntry(true);
 const list = $("list");
 list.addEventListener("click", (ev) => {
   const e = entryOf(ev.target); if (!e) return;
+  if (ev.target.classList.contains("ins")) {       // insert a new entry just above this one, starting at the previous entry's time
+    const d = day(), i = d.entries.indexOf(e), prev = i > 0 ? d.entries[i - 1] : e;
+    snap();
+    const x = { id: uid(), t: prev.t, text: "" };
+    d.entries.splice(i, 0, x); newId = x.id; save(); render();
+    const r = rowEl(x.id);
+    if (r) { r.scrollIntoView({ block: "center", behavior: "smooth" }); r.querySelector(".time").focus({ preventScroll: true }); }
+    return;
+  }
   if (ev.target.classList.contains("now")) setTime(e, now().time);
   else if (ev.target.classList.contains("del")) {
     const d = day(), i = d.entries.indexOf(e);
