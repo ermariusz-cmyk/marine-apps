@@ -28,14 +28,10 @@
   --hero:linear-gradient(135deg,#0a6fe0 0%,#4b49c8 100%);--ok:#30d158;--okbg:rgba(48,209,88,.16);--warn:#ffb340;--warnbg:rgba(255,159,10,.18);--bad:#ff6961;--badbg:rgba(255,69,58,.18);
   --shadow:0 0 0 1px rgba(255,255,255,.05);color-scheme:dark}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]):not([data-theme="night"]){
+  :root:not([data-theme="light"]){
     --bg:#000;--surface:#1c1c1e;--ink:#fff;--dim:#98989f;--line:rgba(84,84,88,.55);--accent:#0a84ff;--ring:rgba(10,132,255,.4);--field:rgba(118,118,128,.24);
     --hero:linear-gradient(135deg,#0a6fe0 0%,#4b49c8 100%);--ok:#30d158;--okbg:rgba(48,209,88,.16);--warn:#ffb340;--warnbg:rgba(255,159,10,.18);--bad:#ff6961;--badbg:rgba(255,69,58,.18);
     --shadow:0 0 0 1px rgba(255,255,255,.05);color-scheme:dark}}
-:root[data-theme="night"]{
-  --bg:#000;--surface:#0e0000;--ink:#ff453a;--dim:#a8281f;--line:rgba(255,69,58,.22);--accent:#ff453a;--accent-ink:#000;--ring:rgba(255,69,58,.4);--field:rgba(255,69,58,.1);
-  --hero:#1b0200;--ok:#ff6a60;--okbg:rgba(255,69,58,.12);--warn:#ff6a60;--warnbg:rgba(255,69,58,.12);--bad:#ff6a60;--badbg:rgba(255,69,58,.2);
-  --shadow:0 0 0 1px rgba(255,69,58,.14);color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
@@ -58,7 +54,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
 .card>h2{margin:0 0 12px;font:700 20px var(--round);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
 .step{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--hero);color:#fff;font:700 15px var(--round);flex:none}
-:root[data-theme="night"] .step{background:#5c110c;color:#ff6a60}
 .sub{font-size:13px;color:var(--dim);margin:0 0 12px}
 
 /* controls */
@@ -83,7 +78,6 @@ input.bad{box-shadow:0 0 0 2px var(--bad)}
 .seg{display:inline-flex;background:var(--field);border-radius:11px;padding:3px;gap:2px}
 .seg button{border:0;background:none;min-height:34px;padding:0 14px;border-radius:9px;font:600 14px var(--sans);color:var(--dim)}
 .seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
-:root[data-theme="night"] .seg button[aria-pressed=true]{background:#4a0d09;color:#ff6a60}
 .chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;cursor:pointer}
 .chk input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -616,10 +610,12 @@ hlp:`<h3>Jak to działa</h3><ol><li><b>Dodaj współrzędne:</b> upuść plik, w
 <h3>Twoje dane</h3><p>Pliki są czytane tylko w tej przeglądarce i nic nie jest nigdzie wysyłane. Lista zostaje na tym urządzeniu, dopóki jej nie wyczyścisz.</p>`
 }};
 
-let S={lang:(navigator.language||"en").toLowerCase().startsWith("pl")?"pl":"en",theme:"auto",wps:[],fmt:"ddm",dec:3,hemi:"suffix",sym:true,pad:true,view:"ll",
+let S={lang:"en",theme:"auto",wps:[],fmt:"ddm",dec:3,hemi:"suffix",sym:true,pad:true,view:"ll",
   grid:{type:"utm",datum:"wgs84",zone:31,south:false},mode:"auto",order:"auto",enOrder:"auto",gc:false,
   route:{name:"",author:"",vessel:"",imo:"",mmsi:""},rtz:{ver:"1.0",radius:0.5,xtdP:0.1,xtdS:0.1,geom:"Loxodrome"}};
 try{const j=JSON.parse(localStorage.getItem(LS)||"{}");for(const k in j){if(k in S)S[k]=(typeof S[k]==="object"&&!Array.isArray(S[k])&&j[k])?Object.assign(S[k],j[k]):j[k]}}catch(e){}
+S.lang="en"; /* the app always opens in English; PL is chosen per session */
+if(S.theme!=="light"&&S.theme!=="dark")S.theme="auto";
 let UNDO=null;
 const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
 const t=k=>{const v=TX[S.lang][k];return v!==undefined?v:TX.en[k]};
@@ -653,7 +649,7 @@ function applyStatic(){
   $$("#sGc button").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.g==="1")===S.gc));
   $("#rName").value=S.route.name;$("#rName").placeholder=defName();$("#rVessel").value=S.route.vessel;$("#rAuthor").value=S.route.author;$("#rImo").value=S.route.imo;$("#rMmsi").value=S.route.mmsi;
   $("#zVer").value=S.rtz.ver;$("#zRad").value=S.rtz.radius;$("#zXp").value=S.rtz.xtdP;$("#zXs").value=S.rtz.xtdS;$("#zGeom").value=S.rtz.geom;
-  const th=[["auto",{en:"Auto",pl:"Auto"}],["light",{en:"Light",pl:"Jasny"}],["dark",{en:"Dark",pl:"Ciemny"}],["night",{en:"Night",pl:"Nocny"}]];
+  const th=[["auto",{en:"Auto",pl:"Auto"}],["light",{en:"Light",pl:"Jasny"}],["dark",{en:"Dark",pl:"Ciemny"}]];
   $("#sTheme").innerHTML=th.map(([k,l])=>`<button data-th="${k}" aria-pressed="${S.theme===k}">${l[S.lang]}</button>`).join("");
   if(S.theme==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.dataset.theme=S.theme;
   $("#aboutLink").innerHTML=location.pathname.split("/").filter(Boolean).length>=1&&window.AZ_SITE?` · <a href="../about/">About &amp; terms</a>`:"";
