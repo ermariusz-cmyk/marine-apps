@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DP Logbook</title>
+<meta name="description" content="Electronic DP logbook: timed event entries per day, ready-made event list, print to PDF. Works offline.">
+<meta name="theme-color" content="#14232d">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(()=>{}))}</script>
+<style>
+:root{
+  --bg:#eef1f4; --card:#fff; --ink:#14232d; --muted:#5d6c77; --line:#d3dae0; --fill:#eef1f4;
+  --navy:#14232d; --accent:#0b6bcb; --accent-ink:#fff; --gold:#ffd166; --danger:#c62828; --hl:#e3f0fc;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0b1116; --card:#16222b; --ink:#e6edf2; --muted:#93a4b0; --line:#2a3944; --fill:#0f1920;
+    --accent:#4aa3ff; --accent-ink:#06121c; --danger:#ff6b60; --hl:#1d3346}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+#top{background:var(--navy);color:#fff;padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left))}
+#top .in{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:10px}
+#top a{color:#c5d1d9;text-decoration:none;font-size:22px;line-height:1;padding:8px 6px 10px 0}
+#top .ttl{flex:1;min-width:0}
+#top h1{margin:0;font-size:18px;letter-spacing:-.01em;line-height:1.2}
+#vesselLbl{font-size:12.5px;color:#9fb2bf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:9px;min-height:38px;padding:0 12px;font-size:14px;font-weight:500}
+.tb:active{background:rgba(255,255,255,.25)}
+
+/* date bar */
+#datebar{position:sticky;top:0;z-index:30;background:var(--card);border-bottom:1px solid var(--line);
+  padding:8px calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left))}
+#datebar .in{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:6px}
+.nav{border:0;background:var(--fill);border-radius:9px;width:42px;height:42px;font-size:22px;line-height:1;flex:none}
+#dateBtn{position:relative;border:0;background:var(--fill);border-radius:9px;height:42px;padding:0 12px;font-weight:650;font-size:16px;
+  white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#datePick{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;cursor:pointer}
+#todayBtn{border:0;background:none;color:var(--accent);font-weight:600;font-size:14px;height:42px;padding:0 6px}
+#clock{margin-left:auto;font:600 15px var(--mono);color:var(--muted);white-space:nowrap;text-align:right}
+#clock small{font:500 11px var(--font);display:block;letter-spacing:.03em}
+
+main{max-width:860px;margin:0 auto;padding:14px calc(14px + env(safe-area-inset-right)) 45vh calc(14px + env(safe-area-inset-left))}
+#loc{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;min-height:44px;margin-bottom:12px}
+#loc::placeholder,.txt::placeholder,.time::placeholder{color:var(--muted);opacity:.75}
+
+/* entries */
+#list{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.row{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr) 40px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row.new{background:var(--hl)}
+.row:first-child.new{border-radius:12px 12px 0 0}.row:last-child.new{border-radius:0 0 12px 12px}.row:only-child.new{border-radius:12px}
+.time{width:100%;border:1px solid transparent;background:var(--fill);border-radius:8px;height:42px;text-align:center;font:600 16px var(--mono);padding:0}
+.time.bad{border-color:var(--danger)}
+.now{display:block;width:100%;margin-top:6px;border:0;border-radius:8px;height:38px;background:var(--accent);color:var(--accent-ink);font-weight:650;font-size:15px}
+.txt{display:block;width:100%;border:1px solid transparent;background:transparent;border-radius:8px;padding:9px 8px;min-height:42px;resize:none;overflow:hidden;line-height:1.4}
+.txt:hover{background:var(--fill)}
+.txt:focus,.time:focus{outline:none;border-color:var(--accent);background:var(--card)}
+.del{border:0;background:none;color:var(--muted);width:40px;height:42px;font-size:20px;border-radius:8px}
+.del:hover{color:var(--danger);background:var(--fill)}
+#empty{padding:34px 18px;text-align:center;color:var(--muted)}
+#empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+
+/* suggestions */
+#sug{position:absolute;z-index:20;left:84px;right:6px;top:calc(100% - 6px);background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 12px 32px rgba(0,0,0,.22);max-height:min(46vh,380px);overflow:auto;-webkit-overflow-scrolling:touch;padding:4px}
+#sug h6{margin:8px 10px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+#sug button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px;min-height:42px}
+#sug button:hover,#sug button.on{background:var(--hl)}
+@media (max-width:520px){#sug{left:6px}}
+
+/* bottom add bar */
+#addbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:linear-gradient(to top,var(--bg) 70%,transparent);
+  padding:18px calc(14px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+#addbar .in{max-width:860px;margin:0 auto;display:flex;gap:10px}
+.big{flex:1;border:0;border-radius:12px;min-height:52px;font-size:16px;font-weight:650;background:var(--accent);color:var(--accent-ink);box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.big.sec{background:var(--card);color:var(--ink);box-shadow:0 0 0 1px var(--line),0 4px 14px rgba(0,0,0,.1)}
+.big:active{transform:translateY(1px)}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--navy);color:#fff;
+  border-radius:12px;padding:10px 14px;display:flex;gap:14px;align-items:center;font-size:14.5px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:calc(100vw - 28px)}
+#toast button{border:0;background:none;color:var(--gold);font-weight:700;padding:4px}
+#toast[hidden]{display:none}
+
+/* dialogs */
+dialog{border:0;border-radius:16px;padding:0;background:var(--card);color:var(--ink);width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 40px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(8,14,18,.55)}
+.dh{position:sticky;top:0;background:var(--card);display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);z-index:1}
+.dh h2{margin:0;font-size:18px;flex:1}
+.dh button{border:0;background:var(--fill);border-radius:9px;min-height:38px;padding:0 14px;font-weight:600}
+.db{padding:16px}
+.db label{display:block;font-size:13px;color:var(--muted);font-weight:600;margin:14px 0 5px}
+.db label:first-child{margin-top:0}
+.db input[type=text],.db select,.db textarea{width:100%;border:1px solid var(--line);background:var(--fill);border-radius:9px;padding:9px 11px;min-height:44px}
+.db textarea{min-height:240px;font-size:15px;line-height:1.5}
+.db p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.db h3{font-size:15px;margin:22px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.b{border:0;background:var(--fill);border-radius:9px;min-height:42px;padding:0 14px;font-weight:600;font-size:14.5px}
+.b.red{color:var(--danger)}
+#dayList button{display:flex;gap:12px;align-items:baseline;width:100%;text-align:left;border:0;background:none;border-bottom:1px solid var(--line);padding:12px 16px;min-height:52px}
+#dayList button:hover{background:var(--fill)}
+#dayList b{white-space:nowrap}
+#dayList span{flex:1;min-width:0;color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#dayList i{font-style:normal;color:var(--muted);font:500 13px var(--mono);white-space:nowrap}
+#dayList p{padding:24px 16px;margin:0;color:var(--muted);text-align:center}
+
+#print{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;color:#000;font:11pt/1.35 Arial,Helvetica,sans-serif}
+  #top,#datebar,main,#addbar,#toast,dialog{display:none!important}
+  #print{display:block}
+  .pday{break-after:page}.pday:last-child{break-after:auto}
+  .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:4px}
+  .ph h1{font-size:18pt;margin:0;letter-spacing:.04em}
+  .ph div{text-align:right;font-size:10.5pt}
+  .pm{display:flex;gap:24px;font-size:10.5pt;padding:6px 0 10px}
+  #print table{width:100%;border-collapse:collapse}
+  #print th,#print td{border:1px solid #000;padding:5px 8px;text-align:left;vertical-align:top}
+  #print th{background:#e8e8e8;font-size:9.5pt;text-transform:uppercase;letter-spacing:.05em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print td:first-child,#print th:first-child{width:22mm;text-align:center;font-family:Consolas,Menlo,monospace;white-space:nowrap}
+  #print td{white-space:pre-wrap}
+  #print tr{break-inside:avoid}
+  .ps{display:flex;gap:40px;margin-top:22mm;break-inside:avoid}
+  .ps div{flex:1;border-top:1px solid #000;padding-top:4px;font-size:9.5pt}
+}
+</style>
+</head>
+<body>
+
+<header id="top"><div class="in">
+  <a href="../" aria-label="All apps" title="All apps">‹</a>
+  <div class="ttl"><h1>DP Logbook</h1><div id="vesselLbl"></div></div>
+  <button class="tb" id="daysBtn">Days</button>
+  <button class="tb" id="printBtn">Print</button>
+  <button class="tb" id="setBtn" aria-label="Settings" title="Settings">⚙</button>
+</div></header>
+
+<div id="datebar"><div class="in">
+  <button class="nav" id="prev" aria-label="Previous day">‹</button>
+  <button id="dateBtn"><span id="dateLbl"></span><input type="date" id="datePick" aria-label="Choose date" tabindex="-1"></button>
+  <button class="nav" id="next" aria-label="Next day">›</button>
+  <button id="todayBtn" hidden>Today</button>
+  <div id="clock"></div>
+</div></div>
+
+<main>
+  <input id="loc" type="text" placeholder="Location / field / operation (optional)" autocomplete="off" aria-label="Location, field or operation">
+  <div id="list"></div>
+</main>
+
+<div id="addbar"><div class="in">
+  <button class="big sec" id="add">+ Add event</button>
+  <button class="big" id="addNow">+ Add event · Now</button>
+</div></div>
+
+<div id="toast" hidden role="status"><span></span><button></button></div>
+
+<dialog id="daysDlg">
+  <div class="dh"><h2>Days</h2><button data-close>Close</button></div>
+  <div id="dayList"></div>
+</dialog>
+
+<dialog id="setDlg">
+  <div class="dh"><h2>Settings</h2><button data-close>Done</button></div>
+  <div class="db">
+    <label for="sVessel">Vessel name</label>
+    <input type="text" id="sVessel" autocomplete="off">
+    <label for="sTz">Logbook time (used by “Now” and for today's date)</label>
+    <select id="sTz"></select>
+    <label for="sEvents">Event list (one per line)</label>
+    <textarea id="sEvents" spellcheck="false"></textarea>
+    <p>These appear in the drop-down when you fill in an event. End a line with … to leave it open for typing more, e.g. “Heading changed to …”. Events you typed by hand before are also offered automatically.</p>
+    <div class="btns" style="margin-top:8px"><button class="b" id="resetEvents">Reset list to defaults</button></div>
+
+    <h3>Data</h3>
+    <div class="btns">
+      <button class="b" id="printAll">Print all days</button>
+      <button class="b" id="csv">Export CSV</button>
+      <button class="b" id="backup">Save backup file</button>
+      <button class="b" id="restore">Restore from backup</button>
+      <button class="b red" id="wipe">Delete all entries</button>
+    </div>
+    <p>The logbook is stored in this browser on this device only. Save a backup file regularly, and use it to move the logbook to another device.</p>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+  </div>
+</dialog>
+
+<div id="print"></div>
+
+<script>
+"use strict";
+const KEY = "dp-logbook-v1";
+const DEFAULT_EVENTS = [
+  "Field arrival",
+  "DP field arrival checklist commenced",
+  "DP field arrival checklist complete",
+  "DP field arrival trials complete",
+  "Vessel on DP",
+  "DP ON – auto position, auto heading",
+  "Control transferred to DP desk",
+  "Control transferred to forward bridge",
+  "500 m checklist complete",
+  "Permission granted to enter 500 m zone",
+  "Entered 500 m zone",
+  "Vessel set up on DP – settling",
+  "On location, in position",
+  "Commenced operations",
+  "Operations complete",
+  "Position moved …",
+  "Heading changed to …",
+  "Position reference selected: …",
+  "Position reference deselected: …",
+  "Thruster started: …",
+  "Thruster stopped: …",
+  "Generator on line: …",
+  "Generator off line: …",
+  "DP status GREEN",
+  "DP status BLUE (advisory)",
+  "DP status YELLOW",
+  "DP status RED",
+  "DP alarm: …",
+  "DPO watch handover",
+  "Weather: wind … / sea … / current …",
+  "Departed 500 m zone",
+  "DP OFF – manual control",
+  "Field departure"
+];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+let S = load();
+let cur = now().date;          // day being viewed
+let followToday = true;        // roll over to the new day at midnight if we were on today
+let newId = null;              // highlighted (just added) row
+
+function load() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  return normalise(s);
+}
+function normalise(s) {
+  if (!s || typeof s !== "object") s = {};
+  s.vessel = typeof s.vessel === "string" ? s.vessel : "";
+  s.tz = typeof s.tz === "string" ? s.tz : "device";
+  s.events = Array.isArray(s.events) ? s.events.filter((x) => typeof x === "string") : DEFAULT_EVENTS.slice();
+  const days = {};
+  if (s.days && typeof s.days === "object") for (const d of Object.keys(s.days)) {
+    if (!/^\d{4}-\d\d-\d\d$/.test(d)) continue;
+    const v = s.days[d] || {};
+    days[d] = {
+      loc: typeof v.loc === "string" ? v.loc : "",
+      entries: (Array.isArray(v.entries) ? v.entries : []).map((e) => ({ id: e.id || uid(), t: parseTime(e.t || "") || "", text: String(e.text || "") }))
+    };
+  }
+  s.days = days;
+  return s;
+}
+let saveFailed = false;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); saveFailed = false; }
+  catch (e) { if (!saveFailed) { saveFailed = true; toast("Could not save – browser storage is full or blocked"); } }
+}
+
+/* ---------- time ---------- */
+function now() {
+  const d = new Date();
+  const off = S && S.tz !== "device" ? parseFloat(S.tz) * 60 : -d.getTimezoneOffset();
+  const iso = new Date(d.getTime() + off * 60000).toISOString();
+  return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+}
+function tzLabel() {
+  if (S.tz === "device") return "LT";
+  const v = parseFloat(S.tz);
+  if (!v) return "UTC";
+  const h = Math.trunc(Math.abs(v)), m = Math.round((Math.abs(v) - h) * 60);
+  return "UTC" + (v > 0 ? "+" : "−") + h + (m ? ":" + String(m).padStart(2, "0") : "");
+}
+function parseTime(v) {
+  v = String(v).trim();
+  let m = v.match(/^(\d{1,2})[:.\s,h-]?(\d{2})$/) || v.match(/^(\d{1,2})$/);
+  if (!m) return null;
+  const h = +m[1], mi = +(m[2] || 0);
+  if (h > 23 || mi > 59) return null;
+  return String(h).padStart(2, "0") + ":" + String(mi).padStart(2, "0");
+}
+function shiftDate(d, n) {
+  const t = new Date(d + "T12:00:00Z"); t.setUTCDate(t.getUTCDate() + n);
+  return t.toISOString().slice(0, 10);
+}
+function fmtDate(d, long) {
+  return new Date(d + "T12:00:00Z").toLocaleDateString("en-GB", { timeZone: "UTC", weekday: long ? "long" : "short", day: "2-digit", month: "short", year: "numeric" });
+}
+
+/* ---------- data helpers ---------- */
+function day(create) {
+  if (!S.days[cur] && create) S.days[cur] = { loc: "", entries: [] };
+  return S.days[cur] || { loc: "", entries: [] };
+}
+function sortEntries(d) {
+  d.entries = d.entries.map((e, i) => [e, i]).sort((a, b) => {
+    if (!a[0].t !== !b[0].t) return a[0].t ? -1 : 1;
+    return a[0].t < b[0].t ? -1 : a[0].t > b[0].t ? 1 : a[1] - b[1];
+  }).map((x) => x[0]);
+}
+function prune(date) {           // drop blank rows / blank days
+  const d = S.days[date]; if (!d) return;
+  d.entries = d.entries.filter((e) => e.t || e.text.trim());
+  if (!d.entries.length && !d.loc.trim()) delete S.days[date];
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  const today = now().date;
+  $("dateLbl").textContent = fmtDate(cur);
+  $("datePick").value = cur;
+  $("todayBtn").hidden = cur === today;
+  $("vesselLbl").textContent = S.vessel;
+  $("vesselLbl").hidden = !S.vessel;
+  document.title = "DP Logbook" + (S.vessel ? " – " + S.vessel : "");
+  const d = day();
+  $("loc").value = d.loc;
+  const list = $("list");
+  closeSug();
+  if (!d.entries.length) {
+    list.innerHTML = '<div id="empty"><b>No entries for this day</b>Tap “Add event” below to start the log.</div>';
+    return;
+  }
+  list.innerHTML = d.entries.map((e) =>
+    '<div class="row' + (e.id === newId ? " new" : "") + '" data-id="' + e.id + '">' +
+      '<div><input class="time" inputmode="numeric" maxlength="5" placeholder="--:--" aria-label="Time" autocomplete="off" value="' + esc(e.t) + '">' +
+      (e.t ? "" : '<button class="now" type="button">Now</button>') + "</div>" +
+      '<textarea class="txt" rows="1" placeholder="Event – type or pick from the list" aria-label="Event" autocomplete="off">' + esc(e.text) + "</textarea>" +
+      '<button class="del" type="button" aria-label="Delete entry" title="Delete entry">✕</button>' +
+    "</div>").join("");
+  list.querySelectorAll(".txt").forEach(grow);
+}
+function grow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+function rowOf(el) { return el.closest(".row"); }
+function entryOf(el) { const r = rowOf(el); return r && day().entries.find((e) => e.id === r.dataset.id); }
+function rowEl(id) { return $("list").querySelector('.row[data-id="' + id + '"]'); }
+
+function tick() {
+  const n = now();
+  $("clock").innerHTML = n.time + "<small>" + tzLabel() + "</small>";
+  if (followToday && cur !== n.date && !document.activeElement.closest("#list")) goto(n.date);
+  else $("todayBtn").hidden = cur === n.date;
+}
+
+function goto(date) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(date)) return;
+  prune(cur); save();
+  cur = date; newId = null;
+  followToday = cur === now().date;
+  render();
+  scrollTo(0, 0);
+}
+
+/* ---------- entry actions ---------- */
+function addEntry(withNow) {
+  const n = now();
+  if (withNow && cur !== n.date) { goto(n.date); }
+  const d = day(true);
+  const e = { id: uid(), t: withNow ? n.time : "", text: "" };
+  d.entries.push(e); sortEntries(d);
+  newId = e.id; save(); render();
+  const r = rowEl(e.id);
+  r.scrollIntoView({ block: "center", behavior: "smooth" });
+  if (withNow) r.querySelector(".txt").focus({ preventScroll: true });
+  else if (cur !== n.date) toast("You are writing in " + fmtDate(cur) + ", not today", "Go to today", () => goto(now().date));
+}
+function setTime(e, t) {
+  e.t = t; newId = e.id;
+  sortEntries(day()); save(); render();
+  const r = rowEl(e.id);
+  if (r && !e.text) r.querySelector(".txt").focus();
+}
+
+$("add").onclick = () => addEntry(false);
+$("addNow").onclick = () => addEntry(true);
+
+const list = $("list");
+list.addEventListener("click", (ev) => {
+  const e = entryOf(ev.target); if (!e) return;
+  if (ev.target.classList.contains("now")) setTime(e, now().time);
+  else if (ev.target.classList.contains("del")) {
+    const d = day(), i = d.entries.indexOf(e), date = cur;
+    d.entries.splice(i, 1); prune(cur); save(); render();
+    if (e.t || e.text.trim()) toast("Entry deleted", "Undo", () => {
+      if (!S.days[date]) S.days[date] = { loc: "", entries: [] };
+      S.days[date].entries.push(e); sortEntries(S.days[date]); save();
+      if (cur === date) render(); else goto(date);
+    });
+  }
+});
+list.addEventListener("change", (ev) => {
+  if (!ev.target.classList.contains("time")) return;
+  const e = entryOf(ev.target); if (!e) return;
+  const v = ev.target.value.trim();
+  if (!v) { setTime(e, ""); return; }
+  const t = parseTime(v);
+  if (!t) { ev.target.classList.add("bad"); ev.target.value = e.t; toast("Time must be 24-hour HH:MM, e.g. 0830 or 14:05"); return; }
+  setTime(e, t);
+});
+list.addEventListener("focusin", (ev) => {
+  const t = ev.target;
+  if (t.classList.contains("time")) { t.classList.remove("bad"); t.select(); }
+  if (t.classList.contains("txt")) openSug(t);
+});
+list.addEventListener("input", (ev) => {
+  const t = ev.target;
+  if (!t.classList.contains("txt")) return;
+  const e = entryOf(t); if (!e) return;
+  e.text = t.value; grow(t); save(); openSug(t);
+});
+list.addEventListener("focusout", (ev) => {
+  if (ev.target.classList.contains("txt")) setTimeout(() => { if (document.activeElement !== ev.target) closeSug(); }, 180);
+});
+list.addEventListener("keydown", (ev) => {
+  const t = ev.target;
+  if (t.classList.contains("time") && ev.key === "Enter") { ev.preventDefault(); t.blur(); return; }
+  if (!t.classList.contains("txt")) return;
+  const items = sug ? [...sug.querySelectorAll("button")] : [];
+  let i = items.findIndex((b) => b.classList.contains("on"));
+  if ((ev.key === "ArrowDown" || ev.key === "ArrowUp") && items.length) {
+    ev.preventDefault();
+    if (i >= 0) items[i].classList.remove("on");
+    i = ev.key === "ArrowDown" ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1);
+    items[i].classList.add("on"); items[i].scrollIntoView({ block: "nearest" });
+  } else if (ev.key === "Enter" && !ev.shiftKey) {
+    ev.preventDefault();
+    if (i >= 0) pick(t, items[i].dataset.v); else t.blur();
+  } else if (ev.key === "Escape") closeSug();
+});
+
+$("loc").addEventListener("input", (ev) => { day(true).loc = ev.target.value; save(); });
+
+/* ---------- suggestions ---------- */
+let sug = null;
+function history() {            // distinct hand-typed events, most recent first
+  const known = new Set(S.events.map((x) => x.trim().toLowerCase()));
+  const out = [];
+  for (const d of Object.keys(S.days).sort().reverse()) {
+    const es = S.days[d].entries;
+    for (let i = es.length - 1; i >= 0; i--) {
+      const v = es[i].text.trim(), k = v.toLowerCase();
+      if (v && !known.has(k)) { known.add(k); out.push(v); }
+    }
+  }
+  return out;
+}
+function openSug(t) {
+  const q = t.value.trim().toLowerCase();
+  const words = q.split(/\s+/).filter(Boolean);
+  const match = (s) => s.toLowerCase() !== q && words.every((w) => s.toLowerCase().includes(w));
+  const evs = S.events.map((x) => x.trim()).filter(Boolean);
+  const exact = evs.some((x) => x.toLowerCase() === q);
+  const a = (!q || exact) ? evs.filter((x) => x.toLowerCase() !== q) : evs.filter(match);
+  const h = history().filter((s) => (!q || exact) ? s.toLowerCase() !== q : match(s)).slice(0, q && !exact ? 30 : 8);
+  if (!a.length && !h.length) { closeSug(); return; }
+  if (!sug) {
+    sug = document.createElement("div"); sug.id = "sug";
+    sug.addEventListener("mousedown", (ev) => ev.preventDefault());   // keep focus in the field
+    sug.addEventListener("click", (ev) => { const b = ev.target.closest("button"); if (b) pick(sug.parentNode.querySelector(".txt"), b.dataset.v); });
+  }
+  const btn = (s) => '<button type="button" data-v="' + esc(s) + '">' + esc(s) + "</button>";
+  sug.innerHTML = (a.length ? "<h6>Event list</h6>" + a.map(btn).join("") : "") + (h.length ? "<h6>Used before</h6>" + h.map(btn).join("") : "");
+  const r = rowOf(t);
+  if (sug.parentNode !== r) r.appendChild(sug);
+  sug.scrollTop = 0;
+}
+function closeSug() { if (sug && sug.parentNode) sug.remove(); }
+function pick(t, v) {
+  const e = entryOf(t); if (!e) return;
+  const i = v.indexOf("…");
+  t.value = e.text = i < 0 ? v : v.replace(/\s*…\s*/g, (m, p) => (p === i ? " " : "  ")).replace(/\s+$/, " ");
+  grow(t); save(); closeSug();
+  if (i < 0) t.blur();
+  else { t.focus(); const p = v.slice(0, i).replace(/\s+$/, "").length + 1; t.setSelectionRange(p, p); }
+}
+
+/* ---------- date bar ---------- */
+$("prev").onclick = () => goto(shiftDate(cur, -1));
+$("next").onclick = () => goto(shiftDate(cur, 1));
+$("todayBtn").onclick = () => goto(now().date);
+$("datePick").addEventListener("change", (ev) => { if (ev.target.value) goto(ev.target.value); });
+$("datePick").addEventListener("click", (ev) => { try { ev.target.showPicker(); } catch (e) {} });
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg, action, fn) {
+  const el = $("toast"), b = el.querySelector("button");
+  el.querySelector("span").textContent = msg;
+  b.hidden = !action; b.textContent = action || "";
+  b.onclick = () => { el.hidden = true; fn && fn(); };
+  el.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, action ? 7000 : 4000);
+}
+
+/* ---------- dialogs ---------- */
+document.querySelectorAll("dialog").forEach((d) => {
+  d.querySelector("[data-close]").onclick = () => d.close();
+  d.addEventListener("click", (ev) => { if (ev.target === d) d.close(); });
+});
+
+$("daysBtn").onclick = () => {
+  prune(cur); save();
+  const ds = Object.keys(S.days).sort().reverse();
+  $("dayList").innerHTML = ds.length ? ds.map((d) => {
+    const v = S.days[d], n = v.entries.length, ts = v.entries.filter((e) => e.t);
+    return '<button data-d="' + d + '"><b>' + fmtDate(d) + "</b><span>" + esc(v.loc) + "</span><i>" +
+      (ts.length ? ts[0].t + "–" + ts[ts.length - 1].t + " · " : "") + n + (n === 1 ? " entry" : " entries") + "</i></button>";
+  }).join("") : "<p>No days logged yet.</p>";
+  $("daysDlg").showModal();
+};
+$("dayList").onclick = (ev) => { const b = ev.target.closest("button"); if (b) { $("daysDlg").close(); goto(b.dataset.d); } };
+
+const tzSel = $("sTz");
+tzSel.innerHTML = '<option value="device">This device\'s local time</option>' +
+  [-12,-11,-10,-9.5,-9,-8,-7,-6,-5,-4,-3.5,-3,-2,-1,0,1,2,3,3.5,4,4.5,5,5.5,5.75,6,6.5,7,8,8.75,9,9.5,10,10.5,11,12,12.75,13,14]
+    .map((v) => { const s = S.tz; S.tz = String(v); const l = tzLabel(); S.tz = s; return '<option value="' + v + '">' + l + "</option>"; }).join("");
+
+$("setBtn").onclick = () => {
+  $("sVessel").value = S.vessel; tzSel.value = S.tz; $("sEvents").value = S.events.join("\n");
+  $("setDlg").showModal();
+};
+$("sVessel").oninput = (ev) => { S.vessel = ev.target.value.trim(); save(); };
+tzSel.onchange = () => { S.tz = tzSel.value; save(); tick(); };
+$("sEvents").oninput = (ev) => { S.events = ev.target.value.split("\n").map((x) => x.trim()).filter(Boolean); save(); };
+$("resetEvents").onclick = () => { if (confirm("Replace the event list with the default list?")) { S.events = DEFAULT_EVENTS.slice(); $("sEvents").value = S.events.join("\n"); save(); } };
+$("setDlg").addEventListener("close", () => { render(); tick(); });
+
+/* ---------- print / export ---------- */
+function printDays(dates) {
+  $("print").innerHTML = dates.map((d) => {
+    const v = S.days[d] || { loc: "", entries: [] };
+    const rows = v.entries.filter((e) => e.t || e.text.trim());
+    return '<section class="pday"><div class="ph"><h1>DP LOGBOOK</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") + fmtDate(d, true) + "</div></div>" +
+      '<div class="pm"><span>Times: ' + (S.tz === "device" ? "ship's local time" : tzLabel()) + "</span>" + (v.loc ? "<span>Location / operation: " + esc(v.loc) + "</span>" : "") + "</div>" +
+      "<table><thead><tr><th>Time</th><th>Event</th></tr></thead><tbody>" +
+      (rows.length ? rows.map((e) => "<tr><td>" + esc(e.t) + "</td><td>" + esc(e.text) + "</td></tr>").join("") : '<tr><td></td><td>No entries</td></tr>') +
+      "</tbody></table><div class=\"ps\"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>";
+  }).join("");
+  if (document.activeElement) document.activeElement.blur();
+  setTimeout(() => print(), 50);
+}
+$("printBtn").onclick = () => printDays([cur]);
+$("printAll").onclick = () => {
+  prune(cur); save();
+  const ds = Object.keys(S.days).sort();
+  if (!ds.length) return toast("Nothing to print yet");
+  $("setDlg").close(); printDays(ds);
+};
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const slug = () => (S.vessel || "vessel").replace(/[^\w-]+/g, "_");
+$("csv").onclick = () => {
+  const q = (s) => '"' + String(s).replace(/"/g, '""') + '"';
+  const rows = [["Date", "Time", "Event", "Location / operation"].map(q).join(",")];
+  for (const d of Object.keys(S.days).sort()) for (const e of S.days[d].entries)
+    if (e.t || e.text.trim()) rows.push([d, e.t, e.text, S.days[d].loc].map(q).join(","));
+  download("DP_Logbook_" + slug() + "_" + now().date + ".csv", "﻿" + rows.join("\r\n"), "text/csv");
+};
+$("backup").onclick = () => { prune(cur); save(); download("DP_Logbook_backup_" + slug() + "_" + now().date + ".json", JSON.stringify(S, null, 1), "application/json"); };
+$("restore").onclick = () => $("file").click();
+$("file").onchange = async (ev) => {
+  const f = ev.target.files[0]; ev.target.value = ""; if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); if (!data || typeof data.days !== "object") throw 0; }
+  catch (e) { return alert("This file is not a DP Logbook backup."); }
+  const n = Object.keys(data.days).length;
+  if (!confirm("Replace the logbook on this device with the backup (" + n + " day" + (n === 1 ? "" : "s") + ")?\nEverything currently stored here will be overwritten.")) return;
+  S = normalise(data); save(); $("setDlg").close(); goto(now().date); toast("Backup restored");
+};
+$("wipe").onclick = () => {
+  if (!confirm("Delete ALL logbook entries on this device?\nThis cannot be undone. Save a backup file first if unsure.")) return;
+  S.days = {}; save(); $("setDlg").close(); goto(now().date); toast("All entries deleted");
+};
+
+/* ---------- start ---------- */
+addEventListener("pagehide", () => { prune(cur); save(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+render(); tick(); setInterval(tick, 5000);
+</script>
+</body>
+</html>
