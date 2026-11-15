@@ -33,6 +33,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #top{background:var(--navy);color:#fff;padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left))}
 #top .in{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:10px}
 #top .ttl{flex:1;min-width:0}
+#logo{height:36px;max-width:110px;object-fit:contain;background:#fff;border-radius:8px;padding:3px 7px;flex:none}
+@media (max-width:520px){#logo{height:32px;max-width:64px;padding:3px 5px}}
+#logoPrev{height:56px;max-width:200px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px 9px;display:block;margin-bottom:10px}
 #top h1{margin:0;font-size:18px;letter-spacing:-.01em;line-height:1.2}
 #vesselLbl{font-size:12.5px;color:#9fb2bf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tb{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:9px;min-height:38px;padding:0 12px;font-size:14px;font-weight:500}
@@ -158,6 +161,8 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
   .pday{break-after:page}.pday:last-child{break-after:auto}
   .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:4px}
   .ph h1{font-size:18pt;margin:0;letter-spacing:.04em}
+  .pl{display:flex;align-items:center;gap:12px}
+  .pl img{height:14mm;max-width:50mm;object-fit:contain}
   .ph div{text-align:right;font-size:10.5pt}
   .pm{display:flex;gap:24px;font-size:10.5pt;padding:6px 0 10px}
   #print table{width:100%;border-collapse:collapse}
@@ -174,6 +179,7 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
 <body>
 
 <header id="top"><div class="in">
+  <img id="logo" alt="" hidden>
   <div class="ttl"><h1>DP Logbook</h1><div id="vesselLbl"></div></div>
   <button class="tb" id="daysBtn">Days</button>
   <button class="tb" id="printBtn">Print</button>
@@ -280,6 +286,17 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
   <div class="db">
     <label for="sVessel">Vessel name</label>
     <input type="text" id="sVessel" autocomplete="off">
+    <label for="sCompany">Company / header text (optional, shown on printouts)</label>
+    <input type="text" id="sCompany" autocomplete="off" placeholder="e.g. Ocean Infinity">
+    <label>Logo (company or ship)</label>
+    <img id="logoPrev" alt="" hidden>
+    <div class="btns">
+      <button class="b" id="logoPick">Choose image…</button>
+      <button class="b" id="logoShip">Generic ship icon</button>
+      <button class="b red" id="logoDel">Remove logo</button>
+    </div>
+    <input type="file" id="logoFile" accept="image/*" hidden>
+    <p>The logo appears at the top of the logbook and on printouts, and is saved in the backup file. It is not uploaded anywhere. Use a PNG or SVG with a transparent or white background.</p>
     <label for="sTz">Logbook time (used by “Now” and for today's date)</label>
     <select id="sTz"></select>
     <label for="sEvents">Event list (one per line)</label>
@@ -407,6 +424,8 @@ function normalise(s) {
     rada: !!l.rada, cy: !!l.cy
   };
   delete s.hipap;
+  s.company = typeof s.company === "string" ? s.company : "";
+  s.logo = typeof s.logo === "string" && /^data:image\//.test(s.logo) && s.logo.length < 900000 ? s.logo : "";
   s.dpMin = s.dpMin === 60 ? 60 : 120;
   s.dpWin = typeof s.dpWin === "string" && /^\d\d:\d\d-\d\d:\d\d(,\d\d:\d\d-\d\d:\d\d)?$/.test(s.dpWin) ? s.dpWin : "00:00-24:00";
   const days = {};
@@ -482,6 +501,7 @@ function render() {
   $("todayBtn").hidden = cur === today;
   $("vesselLbl").textContent = S.vessel;
   $("vesselLbl").hidden = !S.vessel;
+  $("logo").hidden = !S.logo; if (S.logo) $("logo").src = S.logo;
   document.title = "DP Logbook" + (S.vessel ? " – " + S.vessel : "");
   renderLights();
   const d = day();
@@ -768,7 +788,7 @@ $("dpT1").onchange = $("dpT2").onchange = customWin;
 $("dpMin").onchange = (ev) => { S.dpMin = +ev.target.value; save(); calcDp(); renderLights(); };
 $("dpPrint").onclick = () => {
   const r = calcDp(); if (!r) return;
-  $("print").innerHTML = '<section class="pday"><div class="ph"><h1>DP HOURS &amp; DP DAYS</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
+  $("print").innerHTML = '<section class="pday"><div class="ph"><div class="pl'+'">' + phLogo() + '<h1>DP HOURS &amp; DP DAYS</h1></div><div>' + (S.company ? esc(S.company) + "<br>" : "") + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
     fmtDate(r.a) + " – " + fmtDate(r.b) + "<br>Hours counted: " + winLabel() + "</div></div>" +
     '<div class="sum"><div><b>' + fmtDur(r.tot) + "</b>on DP</div><div><b>" + r.dd + "</b>DP days (min. " + S.dpMin / 60 + " h on DP per day)</div><div><b>" + r.any + "</b>days with any DP</div></div>" +
     '<table id="dpTbl">' + $("dpTbl").innerHTML + "</table>" +
@@ -857,13 +877,46 @@ $("daysBtn").onclick = () => {
 };
 $("dayList").onclick = (ev) => { const b = ev.target.closest("button"); if (b) { $("daysDlg").close(); goto(b.dataset.d); } };
 
+/* ---------- logo ---------- */
+const SHIP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80"><path d="M10 52H150L136 68H28Z" fill="#14232d"/>' +
+  '<rect x="100" y="34" width="36" height="18" fill="#14232d"/><rect x="108" y="24" width="22" height="10" fill="#14232d"/><rect x="112" y="27" width="14" height="4" fill="#fff"/>' +
+  '<rect x="118" y="10" width="3" height="14" fill="#14232d"/><path d="M32 52V22L64 12" stroke="#14232d" stroke-width="4" fill="none" stroke-linejoin="round"/><path d="M64 12V30" stroke="#14232d" stroke-width="2"/>' +
+  '<rect x="70" y="43" width="26" height="9" fill="#e8a83a"/>' +
+  '<path d="M0 72q10-8 20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0" stroke="#3b82c4" stroke-width="4" fill="none"/></svg>';
+function setLogo(url, company) { S.logo = url; if (company !== undefined) S.company = company; save(); showLogoPrev(); render(); }
+function showLogoPrev() { $("logoPrev").hidden = !S.logo; if (S.logo) $("logoPrev").src = S.logo; }
+$("logoPick").onclick = () => $("logoFile").click();
+$("logoShip").onclick = () => setLogo("data:image/svg+xml;utf8," + encodeURIComponent(SHIP_SVG));
+$("logoDel").onclick = () => setLogo("");
+$("logoFile").onchange = (ev) => {
+  const f = ev.target.files[0]; ev.target.value = ""; if (!f) return;
+  const rd = new FileReader();
+  rd.onerror = () => alert("Could not read this image.");
+  rd.onload = () => {
+    const raw = rd.result;
+    if (f.type === "image/svg+xml") return raw.length < 300000 ? setLogo(raw) : alert("This SVG file is too large (max about 300 KB).");
+    const img = new Image();
+    img.onerror = () => alert("This file is not an image the browser can open.");
+    img.onload = () => {                                         // shrink big photos / logos so they stay small in storage
+      const k = Math.min(1, 160 / img.naturalHeight, 480 / img.naturalWidth);
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      setLogo(c.toDataURL("image/png"));
+    };
+    img.src = raw;
+  };
+  rd.readAsDataURL(f);
+};
+$("sCompany").oninput = (ev) => { S.company = ev.target.value.trim(); save(); };
+
 const tzSel = $("sTz");
 tzSel.innerHTML = '<option value="device">This device\'s local time</option>' +
   [-12,-11,-10,-9.5,-9,-8,-7,-6,-5,-4,-3.5,-3,-2,-1,0,1,2,3,3.5,4,4.5,5,5.5,5.75,6,6.5,7,8,8.75,9,9.5,10,10.5,11,12,12.75,13,14]
     .map((v) => { const s = S.tz; S.tz = String(v); const l = tzLabel(); S.tz = s; return '<option value="' + v + '">' + l + "</option>"; }).join("");
 
 $("setBtn").onclick = () => {
-  $("sVessel").value = S.vessel; tzSel.value = S.tz; $("sEvents").value = S.events.join("\n");
+  $("sVessel").value = S.vessel; $("sCompany").value = S.company; showLogoPrev(); tzSel.value = S.tz; $("sEvents").value = S.events.join("\n");
   $("setDlg").showModal();
 };
 $("sVessel").oninput = (ev) => { S.vessel = ev.target.value.trim(); save(); };
@@ -873,6 +926,7 @@ $("resetEvents").onclick = () => { if (confirm("Replace the event list with the 
 $("setDlg").addEventListener("close", () => { render(); tick(); });
 
 /* ---------- print / export ---------- */
+const phLogo = () => S.logo ? '<img src="' + S.logo + '" alt="">' : "";
 function printDays(dates, t1, t2) {   // t1 limits the first day, t2 the last day
   const tz = S.tz === "device" ? "ship's local time" : tzLabel();
   const one = dates.length === 1 && !t1 && !t2;
@@ -889,7 +943,7 @@ function printDays(dates, t1, t2) {   // t1 limits the first day, t2 the last da
       "</tbody></table>";
   }
   if (!body) return toast("No entries in this period"), false;
-  $("print").innerHTML = '<section class="pday"><div class="ph"><h1>DP LOGBOOK</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
+  $("print").innerHTML = '<section class="pday"><div class="ph"><div class="pl'+'">' + phLogo() + '<h1>DP LOGBOOK</h1></div><div>' + (S.company ? esc(S.company) + "<br>" : "") + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
     (one ? fmtDate(a, true) : fmtDate(a) + (t1 ? " " + t1 : "") + " – " + fmtDate(b) + (t2 ? " " + t2 : "") + "<br>Times: " + tz) + "</div></div>" + body +
     '<div class="ps"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>';
   if (document.activeElement) document.activeElement.blur();
@@ -965,6 +1019,8 @@ $("impMerge").onclick = () => {
   const have = new Set(S.events.map((x) => x.trim().toLowerCase()));
   for (const x of impData.events) if (!have.has(x.trim().toLowerCase())) S.events.push(x);
   if (!S.vessel) S.vessel = impData.vessel;
+  if (!S.logo) S.logo = impData.logo;
+  if (!S.company) S.company = impData.company;
   impDone(added + (added === 1 ? " entry" : " entries") + " added from backup");
 };
 $("wipe").onclick = () => {
