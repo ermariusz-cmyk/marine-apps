@@ -208,12 +208,29 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
       <div><label for="dpFrom">From</label><input type="date" id="dpFrom"></div>
       <div><label for="dpTo">To</label><input type="date" id="dpTo"></div>
     </div>
+    <label for="dpWin">Hours of the day (watch)</label>
+    <select id="dpWin">
+      <option value="00:00-24:00">Whole day, 00:00–24:00</option>
+      <option value="00:00-06:00">00:00–06:00</option>
+      <option value="06:00-12:00">06:00–12:00</option>
+      <option value="12:00-18:00">12:00–18:00</option>
+      <option value="18:00-24:00">18:00–24:00</option>
+      <option value="00:00-06:00,12:00-18:00">00:00–06:00 and 12:00–18:00</option>
+      <option value="06:00-12:00,18:00-24:00">06:00–12:00 and 18:00–24:00</option>
+      <option value="00:00-12:00">00:00–12:00</option>
+      <option value="12:00-24:00">12:00–24:00</option>
+      <option value="custom">Other hours…</option>
+    </select>
+    <div class="two" id="dpCustom" hidden style="margin-top:8px">
+      <div><label for="dpT1">From time</label><input type="text" id="dpT1" inputmode="numeric" maxlength="5" placeholder="06:00" autocomplete="off"></div>
+      <div><label for="dpT2">To time</label><input type="text" id="dpT2" inputmode="numeric" maxlength="5" placeholder="12:00" autocomplete="off"></div>
+    </div>
     <label for="dpMin">A DP day is a day with at least</label>
     <select id="dpMin"><option value="120">2 hours on DP (Nautical Institute, from 1 Jan 2015)</option><option value="60">1 hour on DP (old scheme, before 2015)</option></select>
     <div class="sum"><div><b id="dpH"></b><span>DP hours</span></div><div><b id="dpD"></b><span>DP days</span></div><div><b id="dpA"></b><span>days with any DP</span></div></div>
     <table id="dpTbl"></table>
     <div class="btns" style="margin-top:14px"><button class="b" id="dpPrint">Print this summary</button></div>
-    <p>DP time is counted between DP ON and DP OFF entries: the DP light, or any entry containing “DP ON” / “on DP” and “DP OFF” / “off DP”. However many hours the vessel is on DP in a day, it counts as one DP day. This is the vessel's time on DP – in a personal DP logbook only your own time on DP watch counts.</p>
+    <p>DP time is counted between DP ON and DP OFF entries: the DP light, or any entry containing “DP ON” / “on DP” and “DP OFF” / “off DP” / “out of DP”. With hours of the day chosen, only DP time inside those hours is counted, each day. However many hours the vessel is on DP in a day, it counts as one DP day. This is the vessel's time on DP – in a personal DP logbook only your own time on DP watch counts.</p>
   </div>
 </dialog>
 
@@ -248,22 +265,47 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
 "use strict";
 const KEY = "dp-logbook-v1";
 const DEFAULT_EVENTS = [
+  "Commence DP setup",
+  "DP ON",
+  "DP ON – auto position, auto heading",
+  "DP C/L complete",
+  "DP W/H C/L complete",
+  "Moving to …",
+  "Vessel in position",
+  "CPT off deck",
+  "CPT ↓",
+  "CPT in the water",
+  "CPT test start",
+  "CPT test complete",
+  "CPT ↑",
+  "CPT on deck",
+  "SVC off deck",
+  "SVC ↓",
+  "SVC in the water",
+  "SVC start",
+  "SVC complete",
+  "SVC ↑",
+  "SVC on deck",
+  "SVP off deck",
+  "SVP ↓",
+  "SVP in the water",
+  "SVP cast start",
+  "SVP cast complete",
+  "SVP ↑",
+  "SVP on deck",
+  "WOW – running standby",
   "Field arrival",
   "DP field arrival checklist commenced",
   "DP field arrival checklist complete",
   "DP field arrival trials complete",
-  "DP ON",
-  "DP ON – auto position, auto heading",
   "Control transferred to DP desk",
   "Control transferred to forward bridge",
   "500 m checklist complete",
   "Permission granted to enter 500 m zone",
   "Entered 500 m zone",
   "Vessel set up on DP – settling",
-  "On location, in position",
   "Commenced operations",
   "Operations complete",
-  "Position moved …",
   "Heading changed to …",
   "Position reference selected: …",
   "Position reference deselected: …",
@@ -276,13 +318,22 @@ const DEFAULT_EVENTS = [
   "DP status YELLOW",
   "DP status RED",
   "DP alarm: …",
-  "DPO watch handover",
   "Weather: wind … / sea … / current …",
   "Departed 500 m zone",
   "DP OFF",
   "DP OFF – manual control",
+  "Vessel out of DP, proceeding to …",
+  "On DP at pilot station",
+  "DP OFF, proceeding towards pilot",
+  "POB",
+  "Pilot away",
+  "FLA",
+  "Aft fast",
+  "All fast",
   "Field departure"
 ];
+const EVENTS_VERSION = 2;       // bump when DEFAULT_EVENTS gains entries: new ones are added to a saved list once
+
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -303,6 +354,11 @@ function normalise(s) {
   s.vessel = typeof s.vessel === "string" ? s.vessel : "";
   s.tz = typeof s.tz === "string" ? s.tz : "device";
   s.events = Array.isArray(s.events) ? s.events.filter((x) => typeof x === "string") : DEFAULT_EVENTS.slice();
+  if (s.evVer !== EVENTS_VERSION) {
+    const have = new Set(s.events.map((x) => x.trim().toLowerCase()));
+    s.events = DEFAULT_EVENTS.filter((x) => !have.has(x.toLowerCase())).concat(s.events);
+    s.evVer = EVENTS_VERSION;
+  }
   const hp = s.hipap || {}, l = s.lights || {};
   s.lights = {
     port: "port" in l ? !!l.port : hp.port !== "down", stbd: "stbd" in l ? !!l.stbd : hp.stbd !== "down",
@@ -310,6 +366,7 @@ function normalise(s) {
   };
   delete s.hipap;
   s.dpMin = s.dpMin === 60 ? 60 : 120;
+  s.dpWin = typeof s.dpWin === "string" && /^\d\d:\d\d-\d\d:\d\d(,\d\d:\d\d-\d\d:\d\d)?$/.test(s.dpWin) ? s.dpWin : "00:00-24:00";
   const days = {};
   if (s.days && typeof s.days === "object") for (const d of Object.keys(s.days)) {
     if (!/^\d{4}-\d\d-\d\d$/.test(d)) continue;
@@ -542,7 +599,7 @@ $("lights").onclick = (ev) => {
 
 /* ---------- DP hours / DP days ---------- */
 function dpKind(text) {
-  if (/\bDP\s*OFF\b|\boff\s+DP\b/i.test(text)) return "off";
+  if (/\bDP\s*OFF\b|\b(off|out\s+of)\s+DP\b/i.test(text)) return "off";
   if (/\bDP\s*ON\b|\bon\s+DP\b/i.test(text)) return "on";
   return null;
 }
@@ -555,35 +612,50 @@ function dpEvents() {            // [{date, min, on}] in time order
   return out;
 }
 function dpNow() { const ev = dpEvents(); return ev.length ? ev[ev.length - 1].on : false; }
-function dpMinutes(date, evs) {
+const toMin = (t) => +t.slice(0, 2) * 60 + +t.slice(3);
+function dpMinutes(date, evs, wins) {   // wins: [[fromMin, toMin], ...] hours of the day to count; default whole day
   const n = now();
   if (date > n.date) return 0;
-  const end = date === n.date ? +n.time.slice(0, 2) * 60 + +n.time.slice(3) : 1440;
-  let on = false, from = 0, total = 0;
+  const end = date === n.date ? toMin(n.time) : 1440;
+  let on = false, from = 0; const iv = [];
   for (const e of evs || dpEvents()) {
     if (e.date < date) { on = e.on; continue; }
     if (e.date > date) break;
-    if (on && !e.on) total += Math.max(0, Math.min(e.min, end) - from);
+    if (on && !e.on) iv.push([from, Math.min(e.min, end)]);
     if (!on && e.on) from = e.min;
     on = e.on;
   }
-  if (on) total += Math.max(0, end - from);
+  if (on) iv.push([from, end]);
+  let total = 0;
+  for (const [a, b] of iv) for (const [x, y] of wins || [[0, 1440]]) total += Math.max(0, Math.min(b, y) - Math.max(a, x));
   return total;
 }
+function dpWins() {              // stored "HH:MM-HH:MM[,HH:MM-HH:MM]" -> minute ranges; a range past midnight is split
+  const out = [];
+  for (const w of S.dpWin.split(",")) {
+    const a = toMin(w.slice(0, 5)), b = toMin(w.slice(6));
+    if (a < b) out.push([a, b]); else if (a > b) out.push([a, 1440], [0, b]);
+  }
+  return out.length ? out : [[0, 1440]];
+}
+const winLabel = () => S.dpWin === "00:00-24:00" ? "whole day" : S.dpWin.replace(/-/g, "–").replace(",", " and ");
 function fmtDur(m) { return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") + " min"; }
 function openDp() {
   prune(cur); save();
   const ds = Object.keys(S.days).sort(), t = now().date;
   $("dpFrom").value = ds[0] && ds[0] < t ? ds[0] : t; $("dpTo").value = t; $("dpMin").value = S.dpMin;
+  const sel = $("dpWin"); sel.value = S.dpWin;
+  if (sel.value !== S.dpWin) { sel.value = "custom"; $("dpT1").value = S.dpWin.slice(0, 5); $("dpT2").value = S.dpWin.slice(6, 11); }
+  $("dpCustom").hidden = sel.value !== "custom";
   calcDp(); $("dpDlg").showModal();
 }
 function calcDp() {
   let a = $("dpFrom").value, b = $("dpTo").value;
   if (!a || !b) return;
   if (a > b) [a, b] = [b, a];
-  const evs = dpEvents(); let tot = 0, dd = 0, any = 0, rows = "", guard = 0;
+  const evs = dpEvents(), wins = dpWins(); let tot = 0, dd = 0, any = 0, rows = "", guard = 0;
   for (let d = a; d <= b && guard++ < 4000; d = shiftDate(d, 1)) {
-    const m = dpMinutes(d, evs); if (!m) continue;
+    const m = dpMinutes(d, evs, wins); if (!m) continue;
     tot += m; any++; if (m >= S.dpMin) dd++;
     rows += "<tr><td>" + fmtDate(d) + "</td><td>" + fmtDur(m) + "</td><td>" + (m >= S.dpMin ? "✓" : "–") + "</td></tr>";
   }
@@ -593,11 +665,23 @@ function calcDp() {
   return { a, b, tot, dd, any };
 }
 $("dpFrom").onchange = $("dpTo").onchange = calcDp;
+function customWin() {
+  const p24 = (v) => /^24[:.]?00$/.test(v.trim()) ? "24:00" : parseTime(v);
+  const a = parseTime($("dpT1").value), b = p24($("dpT2").value);
+  if (!a || !b || a === b) return;
+  $("dpT1").value = a; $("dpT2").value = b;
+  S.dpWin = a + "-" + b; save(); calcDp();
+}
+$("dpWin").onchange = (ev) => {
+  const c = ev.target.value === "custom"; $("dpCustom").hidden = !c;
+  if (c) { customWin(); $("dpT1").focus(); } else { S.dpWin = ev.target.value; save(); calcDp(); }
+};
+$("dpT1").onchange = $("dpT2").onchange = customWin;
 $("dpMin").onchange = (ev) => { S.dpMin = +ev.target.value; save(); calcDp(); renderLights(); };
 $("dpPrint").onclick = () => {
   const r = calcDp(); if (!r) return;
   $("print").innerHTML = '<section class="pday"><div class="ph"><h1>DP HOURS &amp; DP DAYS</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
-    fmtDate(r.a) + " – " + fmtDate(r.b) + "</div></div>" +
+    fmtDate(r.a) + " – " + fmtDate(r.b) + "<br>Hours counted: " + winLabel() + "</div></div>" +
     '<div class="sum"><div><b>' + fmtDur(r.tot) + "</b>on DP</div><div><b>" + r.dd + "</b>DP days (min. " + S.dpMin / 60 + " h on DP per day)</div><div><b>" + r.any + "</b>days with any DP</div></div>" +
     '<table id="dpTbl">' + $("dpTbl").innerHTML + "</table>" +
     '<div class="ps"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>';
