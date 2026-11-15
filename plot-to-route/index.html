@@ -652,7 +652,7 @@ function applyStatic(){
   const th=[["auto",{en:"Auto",pl:"Auto"}],["light",{en:"Light",pl:"Jasny"}],["dark",{en:"Dark",pl:"Ciemny"}]];
   $("#sTheme").innerHTML=th.map(([k,l])=>`<button data-th="${k}" aria-pressed="${S.theme===k}">${l[S.lang]}</button>`).join("");
   if(S.theme==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.dataset.theme=S.theme;
-  $("#aboutLink").innerHTML=location.pathname.split("/").filter(Boolean).length>=1&&window.AZ_SITE?` · <a href="../about/">About &amp; terms</a>`:"";
+  $("#aboutLink").innerHTML=` · <a href="../about/">About &amp; terms</a>`;
   renderList();
 }
 const defName=()=>"Route "+new Date().toISOString().slice(0,10);
