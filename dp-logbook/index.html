@@ -49,14 +49,26 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #clock{margin-left:auto;font:600 15px var(--mono);color:var(--muted);white-space:nowrap;text-align:right}
 #clock small{font:500 11px var(--font);display:block;letter-spacing:.03em}
 
-#hipap{max-width:860px;margin:8px auto 0;display:flex;gap:8px}
-.hp{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;min-height:46px;padding:4px 10px;
-  color:#fff;font-weight:700;font-size:15px;letter-spacing:.02em;white-space:nowrap}
-.hp small{font:600 12px var(--font);opacity:.9;letter-spacing:.04em}
-.hp i{font-style:normal;font-size:13px}
-.hp.up{background:#1a8a3c}
-.hp.down{background:#d3261c}
+#lights{max-width:860px;margin:8px auto 0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.hp{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;border-radius:10px;min-height:46px;padding:3px 6px;
+  color:#fff;font-weight:750;font-size:14.5px;letter-spacing:.02em;white-space:nowrap;line-height:1.2}
+.hp small{font:600 11px var(--font);opacity:.92;letter-spacing:.04em}
+.hp.g{background:#1a8a3c}
+.hp.r{background:#d3261c}
 .hp:active{filter:brightness(.88)}
+#dpChip{background:var(--fill);color:var(--ink);font-weight:700}
+#dpChip small{color:var(--muted);opacity:1}
+@media (max-width:640px){#lights{grid-template-columns:1fr 1fr}.hp{min-height:42px}}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.sum div{background:var(--fill);border-radius:10px;padding:10px;text-align:center}
+.sum b{display:block;font-size:22px}
+.sum span{font-size:12px;color:var(--muted)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.two div{min-width:0}
+.db input[type=date]{width:100%;border:1px solid var(--line);background:var(--fill);border-radius:9px;padding:9px 11px;min-height:44px;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none}
+#dpTbl{width:100%;border-collapse:collapse;font-size:14.5px}
+#dpTbl td,#dpTbl th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left}
+#dpTbl td:nth-child(2),#dpTbl th:nth-child(2){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+#dpTbl td:last-child,#dpTbl th:last-child{text-align:center}
 main{max-width:860px;margin:0 auto;padding:14px calc(14px + env(safe-area-inset-right)) 45vh calc(14px + env(safe-area-inset-left))}
 #loc{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;min-height:44px;margin-bottom:12px}
 #loc::placeholder,.txt::placeholder,.time::placeholder{color:var(--muted);opacity:.75}
@@ -128,6 +140,8 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
   @page{size:A4;margin:14mm}
   body{background:#fff;color:#000;font:11pt/1.35 Arial,Helvetica,sans-serif}
   #top,#datebar,main,#addbar,#toast,dialog{display:none!important}
+  #print .sum{display:flex;gap:30px;margin:10px 0}#print .sum div{background:none;padding:0;text-align:left}#print .sum b{display:inline;font-size:11pt;margin-right:5px}
+  #print #dpTbl td:last-child,#print #dpTbl th:last-child{width:28mm;text-align:center}
   #print{display:block}
   .pday{break-after:page}.pday:last-child{break-after:auto}
   .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:4px}
@@ -161,9 +175,13 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
   <button id="todayBtn" hidden>Today</button>
   <div id="clock"></div>
 </div>
-<div id="hipap" role="group" aria-label="HiPAP pole status">
-  <button class="hp" data-side="port"></button>
-  <button class="hp" data-side="stbd"></button>
+<div id="lights" role="group" aria-label="Status lights">
+  <button class="hp" data-k="dp"></button>
+  <button class="hp" id="dpChip" title="DP hours and DP days"></button>
+  <button class="hp" data-k="port"></button>
+  <button class="hp" data-k="stbd"></button>
+  <button class="hp" data-k="rada"></button>
+  <button class="hp" data-k="cy"></button>
 </div></div>
 
 <main>
@@ -181,6 +199,22 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
 <dialog id="daysDlg">
   <div class="dh"><h2>Days</h2><button data-close>Close</button></div>
   <div id="dayList"></div>
+</dialog>
+
+<dialog id="dpDlg">
+  <div class="dh"><h2>DP hours &amp; DP days</h2><button data-close>Close</button></div>
+  <div class="db">
+    <div class="two">
+      <div><label for="dpFrom">From</label><input type="date" id="dpFrom"></div>
+      <div><label for="dpTo">To</label><input type="date" id="dpTo"></div>
+    </div>
+    <label for="dpMin">A DP day is a day with at least</label>
+    <select id="dpMin"><option value="120">2 hours on DP (Nautical Institute, from 1 Jan 2015)</option><option value="60">1 hour on DP (old scheme, before 2015)</option></select>
+    <div class="sum"><div><b id="dpH"></b><span>DP hours</span></div><div><b id="dpD"></b><span>DP days</span></div><div><b id="dpA"></b><span>days with any DP</span></div></div>
+    <table id="dpTbl"></table>
+    <div class="btns" style="margin-top:14px"><button class="b" id="dpPrint">Print this summary</button></div>
+    <p>DP time is counted between DP ON and DP OFF entries: the DP light, or any entry containing “DP ON” / “on DP” and “DP OFF” / “off DP”. However many hours the vessel is on DP in a day, it counts as one DP day. This is the vessel's time on DP – in a personal DP logbook only your own time on DP watch counts.</p>
+  </div>
 </dialog>
 
 <dialog id="setDlg">
@@ -218,7 +252,7 @@ const DEFAULT_EVENTS = [
   "DP field arrival checklist commenced",
   "DP field arrival checklist complete",
   "DP field arrival trials complete",
-  "Vessel on DP",
+  "DP ON",
   "DP ON – auto position, auto heading",
   "Control transferred to DP desk",
   "Control transferred to forward bridge",
@@ -245,6 +279,7 @@ const DEFAULT_EVENTS = [
   "DPO watch handover",
   "Weather: wind … / sea … / current …",
   "Departed 500 m zone",
+  "DP OFF",
   "DP OFF – manual control",
   "Field departure"
 ];
@@ -268,8 +303,13 @@ function normalise(s) {
   s.vessel = typeof s.vessel === "string" ? s.vessel : "";
   s.tz = typeof s.tz === "string" ? s.tz : "device";
   s.events = Array.isArray(s.events) ? s.events.filter((x) => typeof x === "string") : DEFAULT_EVENTS.slice();
-  const hp = s.hipap || {};
-  s.hipap = { port: hp.port === "down" ? "down" : "up", stbd: hp.stbd === "down" ? "down" : "up" };
+  const hp = s.hipap || {}, l = s.lights || {};
+  s.lights = {
+    port: "port" in l ? !!l.port : hp.port !== "down", stbd: "stbd" in l ? !!l.stbd : hp.stbd !== "down",
+    rada: !!l.rada, cy: !!l.cy
+  };
+  delete s.hipap;
+  s.dpMin = s.dpMin === 60 ? 60 : 120;
   const days = {};
   if (s.days && typeof s.days === "object") for (const d of Object.keys(s.days)) {
     if (!/^\d{4}-\d\d-\d\d$/.test(d)) continue;
@@ -344,7 +384,7 @@ function render() {
   $("vesselLbl").textContent = S.vessel;
   $("vesselLbl").hidden = !S.vessel;
   document.title = "DP Logbook" + (S.vessel ? " – " + S.vessel : "");
-  renderHipap();
+  renderLights();
   const d = day();
   $("loc").value = d.loc;
   const list = $("list");
@@ -371,7 +411,7 @@ function tick() {
   const n = now();
   $("clock").innerHTML = n.time + "<small>" + tzLabel() + "</small>";
   if (followToday && cur !== n.date && !document.activeElement.closest("#list")) goto(n.date);
-  else $("todayBtn").hidden = cur === n.date;
+  else { $("todayBtn").hidden = cur === n.date; renderLights(); }
 }
 
 function goto(date) {
@@ -438,7 +478,7 @@ list.addEventListener("input", (ev) => {
   const t = ev.target;
   if (!t.classList.contains("txt")) return;
   const e = entryOf(t); if (!e) return;
-  e.text = t.value; grow(t); save(); openSug(t);
+  e.text = t.value; grow(t); save(); openSug(t); renderLights();
 });
 list.addEventListener("focusout", (ev) => {
   if (ev.target.classList.contains("txt")) setTimeout(() => { if (document.activeElement !== ev.target) closeSug(); }, 180);
@@ -462,31 +502,106 @@ list.addEventListener("keydown", (ev) => {
 
 $("loc").addEventListener("input", (ev) => { day(true).loc = ev.target.value; save(); });
 
-/* ---------- HiPAP status lights ---------- */
-const SIDES = { port: "PORT", stbd: "STBD" };
-function renderHipap() {
-  document.querySelectorAll(".hp").forEach((b) => {
-    const st = S.hipap[b.dataset.side], up = st === "up";
-    b.className = "hp " + st;
-    b.innerHTML = "<small>" + SIDES[b.dataset.side] + " HiPAP</small><i>" + (up ? "▲" : "▼") + "</i>" + (up ? "UP" : "DOWN");
-    b.setAttribute("aria-label", SIDES[b.dataset.side] + " HiPAP is " + (up ? "up" : "down") + ". Tap to change.");
+/* ---------- status lights ---------- */
+// [label, green text, red text, logged when turning green, logged when turning red]
+const LIGHTS = {
+  dp:   ["DP", "ON", "OFF", "DP ON", "DP OFF"],
+  port: ["PORT HiPAP", "▲ UP", "▼ DOWN", "PORT HiPAP UP", "PORT HiPAP DOWN"],
+  stbd: ["STBD HiPAP", "▲ UP", "▼ DOWN", "STBD HiPAP UP", "STBD HiPAP DOWN"],
+  rada: ["RadaScan", "SELECTED", "NOT SELECTED", "RadaScan selected", "RadaScan deselected"],
+  cy:   ["CyScan", "SELECTED", "NOT SELECTED", "CyScan selected", "CyScan deselected"]
+};
+const lightOn = (k) => k === "dp" ? dpNow() : S.lights[k];
+function renderLights() {
+  document.querySelectorAll(".hp[data-k]").forEach((b) => {
+    const L = LIGHTS[b.dataset.k], on = lightOn(b.dataset.k);
+    b.className = "hp " + (on ? "g" : "r");
+    b.innerHTML = "<small>" + L[0] + "</small>" + L[on ? 1 : 2];
+    b.setAttribute("aria-label", L[0] + ": " + L[on ? 1 : 2].replace(/[▲▼] /, "") + ". Tap to change.");
   });
+  const m = dpMinutes(cur);
+  $("dpChip").innerHTML = "<small>DP TIME THIS DAY</small>" + fmtDur(m) + (m >= S.dpMin ? " · DP day ✓" : "");
 }
-$("hipap").onclick = (ev) => {
+$("lights").onclick = (ev) => {
   const b = ev.target.closest(".hp"); if (!b) return;
-  const side = b.dataset.side, prev = S.hipap[side], n = now();
-  S.hipap[side] = prev === "up" ? "down" : "up";
-  const e = { id: uid(), t: n.time, text: SIDES[side] + " HiPAP " + S.hipap[side].toUpperCase() };
+  const k = b.dataset.k; if (!k) return openDp();
+  const was = lightOn(k), n = now();
+  if (k !== "dp") S.lights[k] = !was;
+  const e = { id: uid(), t: n.time, text: LIGHTS[k][was ? 4 : 3] };
   if (!S.days[n.date]) S.days[n.date] = { loc: "", entries: [] };
   S.days[n.date].entries.push(e); sortEntries(S.days[n.date]);
   if (cur === n.date) newId = e.id;
   save(); render();
   toast("Logged " + n.time + " – " + e.text, "Undo", () => {
-    S.hipap[side] = prev;
+    if (k !== "dp") S.lights[k] = was;
     const d = S.days[n.date];
     if (d) { d.entries = d.entries.filter((x) => x !== e); prune(n.date); }
     save(); render();
   });
+};
+
+/* ---------- DP hours / DP days ---------- */
+function dpKind(text) {
+  if (/\bDP\s*OFF\b|\boff\s+DP\b/i.test(text)) return "off";
+  if (/\bDP\s*ON\b|\bon\s+DP\b/i.test(text)) return "on";
+  return null;
+}
+function dpEvents() {            // [{date, min, on}] in time order
+  const out = [];
+  for (const d of Object.keys(S.days).sort()) for (const e of S.days[d].entries) {
+    const k = e.t && dpKind(e.text);
+    if (k) out.push({ date: d, min: +e.t.slice(0, 2) * 60 + +e.t.slice(3), on: k === "on" });
+  }
+  return out;
+}
+function dpNow() { const ev = dpEvents(); return ev.length ? ev[ev.length - 1].on : false; }
+function dpMinutes(date, evs) {
+  const n = now();
+  if (date > n.date) return 0;
+  const end = date === n.date ? +n.time.slice(0, 2) * 60 + +n.time.slice(3) : 1440;
+  let on = false, from = 0, total = 0;
+  for (const e of evs || dpEvents()) {
+    if (e.date < date) { on = e.on; continue; }
+    if (e.date > date) break;
+    if (on && !e.on) total += Math.max(0, Math.min(e.min, end) - from);
+    if (!on && e.on) from = e.min;
+    on = e.on;
+  }
+  if (on) total += Math.max(0, end - from);
+  return total;
+}
+function fmtDur(m) { return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") + " min"; }
+function openDp() {
+  prune(cur); save();
+  const ds = Object.keys(S.days).sort(), t = now().date;
+  $("dpFrom").value = ds[0] && ds[0] < t ? ds[0] : t; $("dpTo").value = t; $("dpMin").value = S.dpMin;
+  calcDp(); $("dpDlg").showModal();
+}
+function calcDp() {
+  let a = $("dpFrom").value, b = $("dpTo").value;
+  if (!a || !b) return;
+  if (a > b) [a, b] = [b, a];
+  const evs = dpEvents(); let tot = 0, dd = 0, any = 0, rows = "", guard = 0;
+  for (let d = a; d <= b && guard++ < 4000; d = shiftDate(d, 1)) {
+    const m = dpMinutes(d, evs); if (!m) continue;
+    tot += m; any++; if (m >= S.dpMin) dd++;
+    rows += "<tr><td>" + fmtDate(d) + "</td><td>" + fmtDur(m) + "</td><td>" + (m >= S.dpMin ? "✓" : "–") + "</td></tr>";
+  }
+  $("dpH").textContent = (tot / 60).toFixed(1).replace(/\.0$/, "");
+  $("dpD").textContent = dd; $("dpA").textContent = any;
+  $("dpTbl").innerHTML = rows ? "<tr><th>Date</th><th>On DP</th><th>DP day</th></tr>" + rows : "<tr><td>No DP time logged in this period.</td></tr>";
+  return { a, b, tot, dd, any };
+}
+$("dpFrom").onchange = $("dpTo").onchange = calcDp;
+$("dpMin").onchange = (ev) => { S.dpMin = +ev.target.value; save(); calcDp(); renderLights(); };
+$("dpPrint").onclick = () => {
+  const r = calcDp(); if (!r) return;
+  $("print").innerHTML = '<section class="pday"><div class="ph"><h1>DP HOURS &amp; DP DAYS</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
+    fmtDate(r.a) + " – " + fmtDate(r.b) + "</div></div>" +
+    '<div class="sum"><div><b>' + fmtDur(r.tot) + "</b>on DP</div><div><b>" + r.dd + "</b>DP days (min. " + S.dpMin / 60 + " h on DP per day)</div><div><b>" + r.any + "</b>days with any DP</div></div>" +
+    '<table id="dpTbl">' + $("dpTbl").innerHTML + "</table>" +
+    '<div class="ps"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>';
+  $("dpDlg").close(); setTimeout(() => print(), 50);
 };
 
 /* ---------- suggestions ---------- */
@@ -528,7 +643,7 @@ function pick(t, v) {
   const e = entryOf(t); if (!e) return;
   const i = v.indexOf("…");
   t.value = e.text = i < 0 ? v : v.replace(/\s*…\s*/g, (m, p) => (p === i ? " " : "  ")).replace(/\s+$/, " ");
-  grow(t); save(); closeSug();
+  grow(t); save(); closeSug(); renderLights();
   if (i < 0) t.blur();
   else { t.focus(); const p = v.slice(0, i).replace(/\s+$/, "").length + 1; t.setSelectionRange(p, p); }
 }
@@ -590,7 +705,7 @@ function printDays(dates) {
     const v = S.days[d] || { loc: "", entries: [] };
     const rows = v.entries.filter((e) => e.t || e.text.trim());
     return '<section class="pday"><div class="ph"><h1>DP LOGBOOK</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") + fmtDate(d, true) + "</div></div>" +
-      '<div class="pm"><span>Times: ' + (S.tz === "device" ? "ship's local time" : tzLabel()) + "</span>" + (v.loc ? "<span>Location / operation: " + esc(v.loc) + "</span>" : "") + "</div>" +
+      '<div class="pm"><span>Times: ' + (S.tz === "device" ? "ship's local time" : tzLabel()) + "</span>" + (v.loc ? "<span>Location / operation: " + esc(v.loc) + "</span>" : "") + "<span>On DP: " + fmtDur(dpMinutes(d)) + "</span></div>" +
       "<table><thead><tr><th>Time</th><th>Event</th></tr></thead><tbody>" +
       (rows.length ? rows.map((e) => "<tr><td>" + esc(e.t) + "</td><td>" + esc(e.text) + "</td></tr>").join("") : '<tr><td></td><td>No entries</td></tr>') +
       "</tbody></table><div class=\"ps\"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>";
