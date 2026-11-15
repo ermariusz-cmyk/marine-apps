@@ -580,6 +580,7 @@ list.addEventListener("click", (ev) => {
   if (ev.target.classList.contains("now")) setTime(e, now().time);
   else if (ev.target.classList.contains("del")) {
     const d = day(), i = d.entries.indexOf(e);
+    if ((e.t || e.text.trim()) && !confirm("Delete this entry?\n\n" + (e.t ? e.t + "  " : "") + e.text.trim())) return;
     snap(); d.entries.splice(i, 1); prune(cur); save(); render();
     if (e.t || e.text.trim()) toast("Entry deleted", "Undo", undo);
   }
