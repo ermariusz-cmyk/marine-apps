@@ -645,7 +645,7 @@ function renderLights() {
     b.setAttribute("aria-label", L[0] + ": " + L[on ? 1 : 2].replace(/[▲▼] /, "") + ". Tap to change.");
   });
   const m = dpMinutes(cur);
-  $("dpChip").innerHTML = "<small>DP TIME THIS DAY</small>" + fmtDur(m) + (m >= S.dpMin ? " · DP day ✓" : "");
+  $("dpChip").innerHTML = "<small>DP TIME</small>" + fmtDur(m);
 }
 $("lights").onclick = (ev) => {
   const b = ev.target.closest(".hp"); if (!b) return;
