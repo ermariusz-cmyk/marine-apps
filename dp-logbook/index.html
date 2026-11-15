@@ -318,8 +318,8 @@ const DEFAULT_EVENTS = [
   "SVP off deck",
   "SVP ↓",
   "SVP in the water",
-  "SVP cast start",
-  "SVP cast complete",
+  "SVP test start",
+  "SVP test complete",
   "SVP ↑",
   "SVP on deck",
   "WOW – running standby",
@@ -361,7 +361,7 @@ const DEFAULT_EVENTS = [
   "All fast",
   "Field departure"
 ];
-const EVENTS_VERSION = 2;       // bump when DEFAULT_EVENTS gains entries: new ones are added to a saved list once
+const EVENTS_VERSION = 3;       // bump when DEFAULT_EVENTS gains entries: new ones are added to a saved list once
 
 
 const $ = (id) => document.getElementById(id);
@@ -384,6 +384,7 @@ function normalise(s) {
   s.tz = typeof s.tz === "string" ? s.tz : "device";
   s.events = Array.isArray(s.events) ? s.events.filter((x) => typeof x === "string") : DEFAULT_EVENTS.slice();
   if (s.evVer !== EVENTS_VERSION) {
+    s.events = s.events.map((x) => x === "SVP cast start" ? "SVP test start" : x === "SVP cast complete" ? "SVP test complete" : x);
     const have = new Set(s.events.map((x) => x.trim().toLowerCase()));
     s.events = DEFAULT_EVENTS.filter((x) => !have.has(x.toLowerCase())).concat(s.events);
     s.evVer = EVENTS_VERSION;
