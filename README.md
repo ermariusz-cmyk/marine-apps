@@ -12,6 +12,7 @@ assets/               ikony strony
 dp-footprint/         DP Footprint Plot
 port-clearance/       Port Clearance (FAL 1–7, Maritime Declaration of Health)
                       originals/ – wzory formularzy, z których odwzorowano wydruk
+dp-logbook/           DP Logbook (wpisy zdarzeń wg daty i czasu, światła HiPAP/RadaScan/CyScan, DP hours i DP days, wydruk, kopia zapasowa)
 ```
 
 ## Jak dodać nową aplikację
