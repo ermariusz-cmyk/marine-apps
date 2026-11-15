@@ -1,6 +1,6 @@
 {
-  "name": "Route Forge",
-  "short_name": "Route Forge",
+  "name": "Plot to Route",
+  "short_name": "Plot to Route",
   "start_url": "./",
   "scope": "./",
   "display": "minimal-ui",

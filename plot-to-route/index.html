@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Route Forge</title>
+<title>Plot to Route</title>
 <meta name="description" content="Convert coordinates (lat/lon in any format, Easting/Northing) from text, Word, Excel or PDF into a route file (RTZ) for ECDIS. Works offline.">
 <meta name="theme-color" content="#0a84ff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Route Forge">
+<meta name="apple-mobile-web-app-title" content="Plot to Route">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <style>
@@ -155,7 +155,7 @@ pre#xml{margin:8px 0 0;padding:12px;border-radius:12px;background:var(--field);f
   <div class="top">
     <a class="back" href="../" aria-label="SeaTools">‹</a>
     <svg class="badge" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a84ff"/><stop offset="1" stop-color="#5e5ce6"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#bg)"/><g fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="6"><path d="M0 170h512M0 340h512M170 0v512M340 0v512"/></g><path d="M112 392 214 252 304 312 402 132" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 44"/><path d="M112 392 214 252 304 312 402 132" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><circle cx="214" cy="252" r="24" fill="#fff"/><circle cx="304" cy="312" r="24" fill="#fff"/><circle cx="112" cy="392" r="34" fill="#fff"/><circle cx="112" cy="392" r="20" fill="#30d158"/><circle cx="402" cy="132" r="34" fill="#fff"/><circle cx="402" cy="132" r="20" fill="#ff453a"/></svg>
-    <div><p class="eyebrow" data-i="eyebrow">Bridge · ECDIS</p><h1>Route Forge</h1></div>
+    <div><p class="eyebrow" data-i="eyebrow">Bridge · ECDIS</p><h1>Plot to Route</h1></div>
   </div>
   <p class="desc" data-i="desc"></p>
 
@@ -257,7 +257,7 @@ pre#xml{margin:8px 0 0;padding:12px;border-radius:12px;background:var(--field);f
       <select id="sLang" aria-label="Language"><option value="en">English</option><option value="pl">Polski</option></select>
     </div>
     <p data-i="disc" style="margin:0"></p>
-    <p style="margin:0">Route Forge · © 2026 SeaTools<span id="aboutLink"></span></p>
+    <p style="margin:0">Plot to Route · © 2026 SeaTools<span id="aboutLink"></span></p>
   </div>
 </div>
 <div id="over" hidden></div>
@@ -508,7 +508,7 @@ function buildRTZ(wps,r,o){
   wps.forEach((w,i)=>{x+=`    <waypoint id="${i+1}" name="${esc(wpName(w,i))}" radius="${f3(o.radius)}">\n      <position lat="${f7(w.lat)}" lon="${f7(w.lon)}"/>\n`+(i>0?`      ${leg}\n`:"")+`    </waypoint>\n`});
   return x+"  </waypoints>\n</route>\n"}
 function buildGPX(wps,r){
-  let x=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Route Forge" xmlns="http://www.topografix.com/GPX/1/1">\n  <rte>\n    <name>${esc(r.name||"Route")}</name>\n`;
+  let x=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Plot to Route" xmlns="http://www.topografix.com/GPX/1/1">\n  <rte>\n    <name>${esc(r.name||"Route")}</name>\n`;
   wps.forEach((w,i)=>{x+=`    <rtept lat="${f7(w.lat)}" lon="${f7(w.lon)}"><name>${esc(wpName(w,i))}</name></rtept>\n`});
   return x+"  </rte>\n</gpx>\n"}
 function buildCSV(wps,fo,grid){
@@ -523,7 +523,7 @@ function buildTSV(wps,fo){return wps.map((w,i)=>[i+1,wpName(w,i),fmtCoord(w.lat,
 
 /* ================= application ================= */
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const LS="routeforge.v1",uid=()=>Math.random().toString(36).slice(2,9);
+const LS="plottoroute.v1",uid=()=>Math.random().toString(36).slice(2,9);
 const TX={
 en:{
 eyebrow:"Bridge · ECDIS",

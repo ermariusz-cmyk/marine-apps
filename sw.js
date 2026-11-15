@@ -24,11 +24,11 @@ const PRECACHE = [
   "torque-wrench/",
   "torque-wrench/icon.png",
   "torque-wrench/manifest.webmanifest",
-  "route-forge/",
-  "route-forge/icon.png",
-  "route-forge/manifest.webmanifest",
-  "route-forge/vendor/pdf.min.js",
-  "route-forge/vendor/pdf.worker.min.js"
+  "plot-to-route/",
+  "plot-to-route/icon.png",
+  "plot-to-route/manifest.webmanifest",
+  "plot-to-route/vendor/pdf.min.js",
+  "plot-to-route/vendor/pdf.worker.min.js"
 ];
 
 self.addEventListener("install", (event) => {
