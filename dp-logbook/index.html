@@ -9,7 +9,6 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(()=>{}))}</script>
 <style>
 :root{
   --bg:#eef1f4; --card:#fff; --ink:#14232d; --muted:#5d6c77; --line:#d3dae0; --fill:#eef1f4;
@@ -32,7 +31,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 /* top bar */
 #top{background:var(--navy);color:#fff;padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left))}
 #top .in{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:10px}
-#top a{color:#c5d1d9;text-decoration:none;font-size:22px;line-height:1;padding:8px 6px 10px 0}
 #top .ttl{flex:1;min-width:0}
 #top h1{margin:0;font-size:18px;letter-spacing:-.01em;line-height:1.2}
 #vesselLbl{font-size:12.5px;color:#9fb2bf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -51,6 +49,14 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #clock{margin-left:auto;font:600 15px var(--mono);color:var(--muted);white-space:nowrap;text-align:right}
 #clock small{font:500 11px var(--font);display:block;letter-spacing:.03em}
 
+#hipap{max-width:860px;margin:8px auto 0;display:flex;gap:8px}
+.hp{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;min-height:46px;padding:4px 10px;
+  color:#fff;font-weight:700;font-size:15px;letter-spacing:.02em;white-space:nowrap}
+.hp small{font:600 12px var(--font);opacity:.9;letter-spacing:.04em}
+.hp i{font-style:normal;font-size:13px}
+.hp.up{background:#1a8a3c}
+.hp.down{background:#d3261c}
+.hp:active{filter:brightness(.88)}
 main{max-width:860px;margin:0 auto;padding:14px calc(14px + env(safe-area-inset-right)) 45vh calc(14px + env(safe-area-inset-left))}
 #loc{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;min-height:44px;margin-bottom:12px}
 #loc::placeholder,.txt::placeholder,.time::placeholder{color:var(--muted);opacity:.75}
@@ -142,7 +148,6 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
 <body>
 
 <header id="top"><div class="in">
-  <a href="../" aria-label="All apps" title="All apps">‹</a>
   <div class="ttl"><h1>DP Logbook</h1><div id="vesselLbl"></div></div>
   <button class="tb" id="daysBtn">Days</button>
   <button class="tb" id="printBtn">Print</button>
@@ -155,6 +160,10 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
   <button class="nav" id="next" aria-label="Next day">›</button>
   <button id="todayBtn" hidden>Today</button>
   <div id="clock"></div>
+</div>
+<div id="hipap" role="group" aria-label="HiPAP pole status">
+  <button class="hp" data-side="port"></button>
+  <button class="hp" data-side="stbd"></button>
 </div></div>
 
 <main>
@@ -259,6 +268,8 @@ function normalise(s) {
   s.vessel = typeof s.vessel === "string" ? s.vessel : "";
   s.tz = typeof s.tz === "string" ? s.tz : "device";
   s.events = Array.isArray(s.events) ? s.events.filter((x) => typeof x === "string") : DEFAULT_EVENTS.slice();
+  const hp = s.hipap || {};
+  s.hipap = { port: hp.port === "down" ? "down" : "up", stbd: hp.stbd === "down" ? "down" : "up" };
   const days = {};
   if (s.days && typeof s.days === "object") for (const d of Object.keys(s.days)) {
     if (!/^\d{4}-\d\d-\d\d$/.test(d)) continue;
@@ -333,6 +344,7 @@ function render() {
   $("vesselLbl").textContent = S.vessel;
   $("vesselLbl").hidden = !S.vessel;
   document.title = "DP Logbook" + (S.vessel ? " – " + S.vessel : "");
+  renderHipap();
   const d = day();
   $("loc").value = d.loc;
   const list = $("list");
@@ -449,6 +461,33 @@ list.addEventListener("keydown", (ev) => {
 });
 
 $("loc").addEventListener("input", (ev) => { day(true).loc = ev.target.value; save(); });
+
+/* ---------- HiPAP status lights ---------- */
+const SIDES = { port: "PORT", stbd: "STBD" };
+function renderHipap() {
+  document.querySelectorAll(".hp").forEach((b) => {
+    const st = S.hipap[b.dataset.side], up = st === "up";
+    b.className = "hp " + st;
+    b.innerHTML = "<small>" + SIDES[b.dataset.side] + " HiPAP</small><i>" + (up ? "▲" : "▼") + "</i>" + (up ? "UP" : "DOWN");
+    b.setAttribute("aria-label", SIDES[b.dataset.side] + " HiPAP is " + (up ? "up" : "down") + ". Tap to change.");
+  });
+}
+$("hipap").onclick = (ev) => {
+  const b = ev.target.closest(".hp"); if (!b) return;
+  const side = b.dataset.side, prev = S.hipap[side], n = now();
+  S.hipap[side] = prev === "up" ? "down" : "up";
+  const e = { id: uid(), t: n.time, text: SIDES[side] + " HiPAP " + S.hipap[side].toUpperCase() };
+  if (!S.days[n.date]) S.days[n.date] = { loc: "", entries: [] };
+  S.days[n.date].entries.push(e); sortEntries(S.days[n.date]);
+  if (cur === n.date) newId = e.id;
+  save(); render();
+  toast("Logged " + n.time + " – " + e.text, "Undo", () => {
+    S.hipap[side] = prev;
+    const d = S.days[n.date];
+    if (d) { d.entries = d.entries.filter((x) => x !== e); prune(n.date); }
+    save(); render();
+  });
+};
 
 /* ---------- suggestions ---------- */
 let sug = null;
