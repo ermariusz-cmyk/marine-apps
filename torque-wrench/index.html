@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Torque Wrench</title>
-<meta name="description" content="Bolt and nut tightening torque for ISO metric threads, with an animated analog click wrench and a digital torque wrench. Works offline.">
+<meta name="description" content="Bolt and nut tightening torque for ISO metric coarse and fine threads, with an animated analog click wrench and a digital torque wrench. Works offline.">
 <meta name="theme-color" content="#14232d">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -175,16 +175,25 @@ tr.cur td{background:var(--infobg);font-weight:700}
 <script>
 "use strict";
 /* ============ DATA ============ */
-// ISO metric coarse thread. As = tensile stress area (mm²).
-const SIZES=[["M5",5,14.2],["M6",6,20.1],["M8",8,36.6],["M10",10,58],["M12",12,84.3],["M14",14,115],["M16",16,157],["M18",18,192],
-  ["M20",20,245],["M22",22,303],["M24",24,353],["M27",27,459],["M30",30,561],["M33",33,694],["M36",36,817],["M39",39,976],["M42",42,1120],["M48",48,1470]]
-  .map(([n,d,As])=>({n,d,As}));
+// ISO metric threads. Coarse pitch per diameter, fine pitches listed below.
+// As = tensile stress area (ISO 898-1): π/4·(d − 0.9382·P)²;  d2 = pitch diameter = d − 0.6495·P.
+const COARSE={5:.8,6:1,8:1.25,10:1.5,12:1.75,14:2,16:2,18:2.5,20:2.5,22:2.5,24:3,27:3,30:3.5,33:3.5,36:4,39:4,42:4.5,48:5};
+const FINE=[[5,.5],[6,.75],[8,1.25],[8,1],[10,1.25],[10,1],[12,1.5],[12,1.25],[14,1.5],[16,1.5],[18,2],[18,1.5],[20,2],[20,1.5],
+  [22,2],[22,1.5],[24,2],[24,1.5],[27,2],[30,2],[33,2],[36,3],[36,2],[39,3],[42,3],[48,3]];
+// Spanner / socket size across flats (ISO 272); some older DIN sizes differ.
+const AF={5:8,6:10,8:13,10:16,12:18,14:21,16:24,18:27,20:30,22:34,24:36,27:41,30:46,33:50,36:55,39:60,42:65,48:75};
+const AF_DIN={10:17,12:19,14:22,22:32};
+const mkThread=(d,P,fine)=>({id:"M"+d+(fine?"x"+P:""),d,P,fine,As:Math.PI/4*Math.pow(d-.9382*P,2),d2:d-.6495*P,af:AF[d]});
+const THREADS=Object.keys(COARSE).map(d=>mkThread(+d,COARSE[d],false)).concat(FINE.map(([d,P])=>mkThread(d,P,true)))
+  .sort((a,b)=>a.d-b.d||(a.fine-b.fine)||(b.P-a.P));
+const thLabel=(th,lang)=>{const P=String(th.P);return "M"+th.d+" × "+(lang==="pl"?P.replace(".",","):P)};
 // Rp = yield / proof strength (MPa). nut = marked nut class that mates with this bolt class.
 const CLASSES=[
   {id:"4.6",Rp:240,nut:"4"},{id:"5.8",Rp:400,nut:"5"},{id:"8.8",Rp:640,nut:"8"},{id:"10.9",Rp:940,nut:"10"},{id:"12.9",Rp:1100,nut:"12"},
   {id:"A2-70",Rp:450,nut:"A2-70",ss:1},{id:"A4-70",Rp:450,nut:"A4-70",ss:1},{id:"A4-80",Rp:600,nut:"A4-80",ss:1}];
 // Nut factor K in T = K·d·F
-const LUBES=[{id:"dry",K:.20},{id:"oil",K:.15},{id:"cuni",K:.12},{id:"moly",K:.10}];
+// K = nut factor for the standard coarse thread; mu = friction coefficient used for the fine-thread correction.
+const LUBES=[{id:"dry",K:.20,mu:.15},{id:"oil",K:.15,mu:.11},{id:"cuni",K:.12,mu:.09},{id:"moly",K:.10,mu:.075}];
 const PRELOADS=[{v:.7,id:"std"},{v:.5,id:"low"},{v:.9,id:"high"}];
 const MULTS=[1,3,5,10,25];
 // Hand wrenches (click type). step = one full turn of the handle (main scale division), 10 micro divisions per turn.
@@ -197,7 +206,7 @@ const TX={
 en:{
  title:"Torque Wrench",subtitle:"Bolts, nuts & studs – ISO metric",
  h_fastener:"Fastener",l_type:"What are you tightening?",t_bolt:"Bolt / screw",t_nut:"Nut",t_stud:"Stud",
- l_class_bolt:"Strength class (head marking)",l_class_nut:"Nut class (marking on nut)",l_size:"Thread size",l_lube:"Thread condition / lubricant",
+ l_class_bolt:"Strength class (head marking)",l_class_nut:"Nut class (marking on nut)",l_size:"Thread (size × pitch)",g_coarse:"Coarse thread",g_fine:"Fine thread",r_thread:"Thread",r_k:"Nut factor K (used)",r_af:"Spanner / socket (AF)",r_vs:(c)=>`Compared with coarse ${c}`,w_fine:(n)=>`Fine thread ${n}: check the pitch with a thread gauge before you tighten. Fine threads need the same pitch on bolt and nut and are damaged more easily by cross-threading.`,l_lube:"Thread condition / lubricant",
  l_adv:"Advanced: preload level, torque multiplier",l_preload:"Preload (% of yield)",l_mult:"Torque multiplier",
  mult_none:"None (hand wrench only)",
  lube_dry:"Dry, as supplied (K 0.20)",lube_oil:"Light oil / engine oil (K 0.15)",lube_cuni:"Copper / nickel anti-seize (K 0.12)",lube_moly:"MoS₂ paste (K 0.10)",
@@ -221,8 +230,8 @@ en:{
  st_unlock:"1 Unlock",st_set:"2 Turn to set",st_lock:"3 Lock",
  lcd_set:"SET",lcd_hold:"HOLD",demo:"▶ Simulate tightening",demo_stop:"■ Reset",
  s_how:"Instructions",s_table:"Table: all sizes for this class",s_calc:"How the value is calculated",
- tb_size:"Size",tb_t:"Torque Nm",tb_f:"Preload kN",
- disclaimer:"Guide values for ISO metric coarse threads, calculated – not copied from a maker's table. Always use the torque from the equipment manual, the maker or the class-approved procedure if one exists; it overrides this app. Never rely on this app alone for safety-critical joints.",
+ tb_size:"Thread",tb_t:"Torque Nm",tb_f:"Preload kN",
+ disclaimer:"Guide values for ISO metric coarse and fine threads, calculated – not copied from a maker's table. Always use the torque from the equipment manual, the maker or the class-approved procedure if one exists; it overrides this app. Never rely on this app alone for safety-critical joints.",
  how:`
 <h3>0 · Before you start</h3>
 <ul>
@@ -259,17 +268,27 @@ en:{
 <li>A crow-foot or extension on the head changes the real torque. Set T × L ÷ (L + E), where L is the wrench length and E the extension (in line with the wrench).</li>
 </ul>
 <h3>5 · Large sizes</h3>
-<p>Above about 600–1000 Nm a hand wrench is not practical. Use a <b>torque multiplier</b> (set the wrench to the torque ÷ ratio, fit the reaction arm against a solid point and stay clear of it) or a <b>hydraulic torque wrench / bolt tensioner</b> following the maker's procedure.</p>`,
+<p>Above about 600–1000 Nm a hand wrench is not practical. Use a <b>torque multiplier</b> (set the wrench to the torque ÷ ratio, fit the reaction arm against a solid point and stay clear of it) or a <b>hydraulic torque wrench / bolt tensioner</b> following the maker's procedure.</p>
+<h3>6 · Coarse or fine thread</h3>
+<ul>
+<li><b>How to tell:</b> measure the outer diameter with calipers and the pitch with a thread gauge (or count threads over 10 mm). M10 × 1.5 is coarse, M10 × 1.25 and M10 × 1 are fine. Marking “M10” alone always means coarse.</li>
+<li><b>Fine thread</b> has a larger stress area, so it carries more preload and takes about 3–10 % more torque than the coarse thread of the same size. It resists loosening from vibration better and allows fine adjustment, which is why engines, pumps and hydraulics use it a lot.</li>
+<li>It is also <b>more sensitive</b>: dirt, damage, wrong pitch and cross-threading ruin it quickly, and stainless fine threads gall easily. Start the nut by hand for several turns before using any tool.</li>
+<li><b>Never mix pitches</b> (fine bolt in coarse nut or the other way). If it does not turn freely by hand, stop and check.</li>
+<li>Engine cylinder-head, connecting-rod and main-bearing bolts often have fine threads and their own procedure (torque plus angle, stretch bolts that must be replaced). In that case the <b>engine manual overrides the table</b>.</li>
+<li><b>Spanner size:</b> the table shows the ISO across-flats size. Older DIN fasteners differ for M10 (17), M12 (19), M14 (22) and M22 (32). The app shows the DIN size in brackets.</li>
+</ul>`,
  calc:`
 <p><code>F = ν · Rp · As</code> preload (N) = preload level × yield strength (MPa) × stress area (mm²)</p>
 <p><code>T = K · d · F</code> torque (N·mm) = nut factor × nominal diameter (mm) × preload (N)</p>
 <p>Defaults: 70 % of yield, K = 0.20 dry / 0.15 oiled / 0.12 anti-seize / 0.10 MoS₂. Yield Rp: 4.6 = 240, 5.8 = 400, 8.8 = 640, 10.9 = 940, 12.9 = 1100, A2-70 and A4-70 = 450, A4-80 = 600 MPa. Torque is rounded to a value the wrench scale can show.</p>
+<p><b>Fine thread:</b> As = π/4 · (d − 0.9382 · P)², pitch diameter d₂ = d − 0.6495 · P. K is corrected from the coarse value by <code>ΔK = (P − P_coarse) / (2π·d) + μ · (d₂ − d₂_coarse) / (2 · cos 30° · d)</code>: a smaller pitch lowers the lifting term, a larger pitch diameter raises thread friction. Friction μ: dry 0.15, oil 0.11, anti-seize 0.09, MoS₂ 0.075 (stainless dry 0.22).</p>
 <p>The real result depends on friction, so scatter of ±25 % is normal with plain torque control. That is why the maker's value and a clean, correctly lubricated thread matter more than the last digit.</p>`
 },
 pl:{
  title:"Klucz dynamometryczny",subtitle:"Śruby, nakrętki i szpilki – gwint metryczny ISO",
  h_fastener:"Element złączny",l_type:"Co dokręcasz?",t_bolt:"Śruba",t_nut:"Nakrętka",t_stud:"Szpilka",
- l_class_bolt:"Klasa wytrzymałości (znak na łbie)",l_class_nut:"Klasa nakrętki (znak na nakrętce)",l_size:"Rozmiar gwintu",l_lube:"Stan gwintu / smarowanie",
+ l_class_bolt:"Klasa wytrzymałości (znak na łbie)",l_class_nut:"Klasa nakrętki (znak na nakrętce)",l_size:"Gwint (rozmiar × skok)",g_coarse:"Gwint zwykły",g_fine:"Gwint drobnozwojny",r_thread:"Gwint",r_k:"Współczynnik K (użyty)",r_af:"Klucz / nasadka (rozmiar)",r_vs:(c)=>`W porównaniu z gwintem zwykłym ${c}`,w_fine:(n)=>`Gwint drobny ${n}: przed dokręceniem sprawdź skok sprawdzianem do gwintów. Śruba i nakrętka muszą mieć ten sam skok, a gwint drobny łatwiej uszkodzić przy krzywym nakręcaniu.`,l_lube:"Stan gwintu / smarowanie",
  l_adv:"Zaawansowane: poziom napięcia, mnożnik momentu",l_preload:"Napięcie wstępne (% granicy plastyczności)",l_mult:"Mnożnik momentu",
  mult_none:"Brak (tylko klucz ręczny)",
  lube_dry:"Na sucho, jak z fabryki (K 0,20)",lube_oil:"Lekki olej / olej silnikowy (K 0,15)",lube_cuni:"Pasta miedziowa / niklowa (K 0,12)",lube_moly:"Pasta MoS₂ (K 0,10)",
@@ -293,8 +312,8 @@ pl:{
  st_unlock:"1 Odblokuj",st_set:"2 Przekręć",st_lock:"3 Zablokuj",
  lcd_set:"NASTAW",lcd_hold:"HOLD",demo:"▶ Symuluj dokręcanie",demo_stop:"■ Reset",
  s_how:"Instrukcja",s_table:"Tabela: wszystkie rozmiary dla tej klasy",s_calc:"Jak liczona jest wartość",
- tb_size:"Rozmiar",tb_t:"Moment Nm",tb_f:"Napięcie kN",
- disclaimer:"Wartości orientacyjne dla gwintu metrycznego zwykłego ISO, obliczone, a nie przepisane z tabeli producenta. Zawsze stosuj moment z instrukcji urządzenia, od producenta lub z procedury zatwierdzonej przez klasę, jeśli taka istnieje – ma pierwszeństwo przed tą aplikacją. Nie opieraj się wyłącznie na niej przy połączeniach krytycznych dla bezpieczeństwa.",
+ tb_size:"Gwint",tb_t:"Moment Nm",tb_f:"Napięcie kN",
+ disclaimer:"Wartości orientacyjne dla gwintu metrycznego ISO, zwykłego i drobnozwojnego, obliczone, a nie przepisane z tabeli producenta. Zawsze stosuj moment z instrukcji urządzenia, od producenta lub z procedury zatwierdzonej przez klasę, jeśli taka istnieje – ma pierwszeństwo przed tą aplikacją. Nie opieraj się wyłącznie na niej przy połączeniach krytycznych dla bezpieczeństwa.",
  how:`
 <h3>0 · Zanim zaczniesz</h3>
 <ul>
@@ -331,11 +350,21 @@ pl:{
 <li>Nasadka otwarta lub przedłużka na główce zmienia rzeczywisty moment. Ustaw T × L ÷ (L + E), gdzie L to długość klucza, a E przedłużka (w osi klucza).</li>
 </ul>
 <h3>5 · Duże rozmiary</h3>
-<p>Powyżej ok. 600–1000 Nm klucz ręczny jest niepraktyczny. Użyj <b>mnożnika momentu</b> (ustaw klucz na moment ÷ przełożenie, oprzyj ramię reakcyjne o twardy punkt i trzymaj się z dala) albo <b>klucza hydraulicznego / napinacza śrub</b> zgodnie z procedurą producenta.</p>`,
+<p>Powyżej ok. 600–1000 Nm klucz ręczny jest niepraktyczny. Użyj <b>mnożnika momentu</b> (ustaw klucz na moment ÷ przełożenie, oprzyj ramię reakcyjne o twardy punkt i trzymaj się z dala) albo <b>klucza hydraulicznego / napinacza śrub</b> zgodnie z procedurą producenta.</p>
+<h3>6 · Gwint zwykły czy drobny</h3>
+<ul>
+<li><b>Jak rozpoznać:</b> zmierz suwmiarką średnicę zewnętrzną, a skok sprawdzianem do gwintów (albo policz zwoje na 10 mm). M10 × 1,5 to gwint zwykły, M10 × 1,25 i M10 × 1 to gwinty drobne. Samo oznaczenie „M10” zawsze oznacza gwint zwykły.</li>
+<li><b>Gwint drobny</b> ma większy przekrój rdzenia, więc przenosi większe napięcie i wymaga ok. 3–10 % większego momentu niż gwint zwykły tego samego rozmiaru. Lepiej opiera się odkręcaniu od drgań i pozwala na dokładniejszą regulację, dlatego jest często stosowany w silnikach, pompach i hydraulice.</li>
+<li>Jest też <b>bardziej wrażliwy</b>: brud, uszkodzenie, zły skok i krzywe nakręcenie szybko go niszczą, a drobny gwint ze stali nierdzewnej łatwo się zaciera. Przed użyciem narzędzia nakręć nakrętkę ręką na kilka zwojów.</li>
+<li><b>Nigdy nie mieszaj skoków</b> (śruba drobna w nakrętce zwykłej lub odwrotnie). Jeśli nie kręci się swobodnie ręką, zatrzymaj się i sprawdź.</li>
+<li>Śruby głowicy, korbowodów i łożysk głównych w silnikach mają często gwint drobny i własną procedurę (moment plus kąt, śruby rozciągliwe do wymiany). Wtedy <b>instrukcja silnika ma pierwszeństwo przed tabelą</b>.</li>
+<li><b>Rozmiar klucza:</b> tabela podaje rozmiar ISO na płask. Starsze elementy DIN różnią się przy M10 (17), M12 (19), M14 (22) i M22 (32). Aplikacja pokazuje rozmiar DIN w nawiasie.</li>
+</ul>`,
  calc:`
 <p><code>F = ν · Rp · As</code> napięcie (N) = poziom napięcia × granica plastyczności (MPa) × przekrój rdzenia (mm²)</p>
 <p><code>T = K · d · F</code> moment (N·mm) = współczynnik K × średnica nominalna (mm) × napięcie (N)</p>
 <p>Domyślnie: 70 % granicy plastyczności, K = 0,20 sucho / 0,15 olej / 0,12 pasta antyzatarciowa / 0,10 MoS₂. Granica Rp: 4.6 = 240, 5.8 = 400, 8.8 = 640, 10.9 = 940, 12.9 = 1100, A2-70 i A4-70 = 450, A4-80 = 600 MPa. Moment jest zaokrąglany do wartości, którą da się ustawić na skali klucza.</p>
+<p><b>Gwint drobny:</b> As = π/4 · (d − 0,9382 · P)², średnica podziałowa d₂ = d − 0,6495 · P. K jest korygowane względem gwintu zwykłego: <code>ΔK = (P − P_zwykły) / (2π·d) + μ · (d₂ − d₂_zwykły) / (2 · cos 30° · d)</code>: mniejszy skok zmniejsza składnik „podnoszenia”, a większa średnica podziałowa zwiększa tarcie na gwincie. Tarcie μ: sucho 0,15, olej 0,11, pasta 0,09, MoS₂ 0,075 (nierdzewka sucho 0,22).</p>
 <p>Rzeczywisty wynik zależy od tarcia, więc przy zwykłym dokręcaniu momentem rozrzut ±25 % jest normalny. Dlatego wartość producenta oraz czysty, prawidłowo nasmarowany gwint ważą więcej niż ostatnia cyfra.</p>`
 }};
 
@@ -344,6 +373,7 @@ const $=id=>document.getElementById(id);
 const LS="torque-wrench-v1";
 let S={lang:(navigator.language||"en").toLowerCase().startsWith("pl")?"pl":"en",type:"bolt",cls:"8.8",size:"M16",lube:"dry",nu:.7,mult:1,unit:"nm"};
 try{Object.assign(S,JSON.parse(localStorage.getItem(LS)||"{}"))}catch(e){}
+if(!THREADS.some(x=>x.id===S.size))S.size="M16";
 const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
 const t=k=>TX[S.lang][k];
 const fmt=(v,dp)=>v.toLocaleString(S.lang==="pl"?"pl-PL":"en-GB",{minimumFractionDigits:dp,maximumFractionDigits:dp});
@@ -353,9 +383,13 @@ const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const
 
 /* ============ CALCULATION ============ */
 function roundT(T){return T<20?Math.round(T*2)/2:T<300?Math.round(T):Math.round(T/5)*5}
-function calc(clsId,size,lubeId,nu){
-  const c=CLASSES.find(x=>x.id===clsId),s=SIZES.find(x=>x.n===size),l=LUBES.find(x=>x.id===lubeId);
-  let K=l.K; if(c.ss&&lubeId==="dry")K=.25;
+function calc(clsId,thId,lubeId,nu){
+  const c=CLASSES.find(x=>x.id===clsId),s=THREADS.find(x=>x.id===thId),l=LUBES.find(x=>x.id===lubeId);
+  const dry=lubeId==="dry";
+  let K=l.K,mu=l.mu; if(c.ss&&dry){K=.25;mu=.22}
+  // Fine thread: smaller lead (less torque to lift the load) but larger pitch diameter (more thread friction).
+  const cp=COARSE[s.d],cd2=s.d-.6495*cp;
+  if(s.fine) K+=(s.P-cp)/(2*Math.PI*s.d)+mu*(s.d2-cd2)/(2*.866*s.d);
   const F=nu*c.Rp*s.As;                 // N
   const T=K*s.d*F/1000;                 // Nm
   return {c,s,K,F,T:roundT(T),Traw:T};
@@ -366,7 +400,8 @@ const unitLbl=()=>S.unit==="lbf"?"lbf·ft":S.unit==="kgf"?"kgf·m":"Nm";
 
 /* ============ UI BUILD ============ */
 function buildSelects(){
-  $("size").innerHTML=SIZES.map(s=>`<option value="${s.n}">${s.n}</option>`).join("");
+  const opt=th=>`<option value="${th.id}">${thLabel(th,S.lang)}</option>`;
+  $("size").innerHTML=`<optgroup label="${t("g_coarse")}">${THREADS.filter(x=>!x.fine).map(opt).join("")}</optgroup><optgroup label="${t("g_fine")}">${THREADS.filter(x=>x.fine).map(opt).join("")}</optgroup>`;
   $("lube").innerHTML=LUBES.map(l=>`<option value="${l.id}">${t("lube_"+l.id)}</option>`).join("");
   $("nu").innerHTML=PRELOADS.map(p=>`<option value="${p.v}">${t("pre_"+p.id)}</option>`).join("");
   $("mult").innerHTML=MULTS.map(m=>`<option value="${m}">${m===1?t("mult_none"):m+" : 1"}</option>`).join("");
@@ -598,6 +633,7 @@ function render(animate){
   const W=[];
   if(r.c.ss)W.push(["warn",t("w_ss")]);
   if(r.c.ss&&S.lube==="dry")W.push(["danger",t("w_dry_ss")]);
+  if(r.s.fine)W.push(["",t("w_fine")(thLabel(r.s,S.lang))]);
   if(S.nu>=.9)W.push(["warn",t("w_high")]);
   if(r.T>1000*ratio||(inNm>1000)) W.push(["danger",t("w_nomult")]);
   else if(r.T>600&&ratio===1) W.push(["warn",t("w_big")]);
@@ -605,31 +641,40 @@ function render(animate){
   $("warns").innerHTML=W.map(([c,m])=>`<div class="note ${c}">${m}</div>`).join("");
 
   // result card
+  let cmp=0,cmpTh=null;
+  if(r.s.fine){cmpTh=THREADS.find(x=>!x.fine&&x.d===r.s.d);cmp=(r.T/calc(S.cls,cmpTh.id,S.lube,S.nu).T-1)*100}
   const pull=wrench?setNm/wrench.L:null;
   const stages=[30,60,100].map(p=>({p,v:p===100?r.T:roundT(r.T*p/100)}));
   $("result").innerHTML=`
-    <h2>${t("r_torque")} · ${r.s.n} · ${S.type==="nut"?cNut:r.c.id}</h2>
+    <h2>${t("r_torque")} · ${thLabel(r.s,S.lang)} · ${S.type==="nut"?cNut:r.c.id}</h2>
     <div class="big"><b>${fmtT(r.T)}</b><span>Nm</span></div>
     <div class="sub"><span><b>${fmt(r.T*0.737562,r.T*0.737562<20?1:0)}</b> lbf·ft</span><span><b>${fmt(r.T*0.101972,r.T*0.101972<10?2:1)}</b> kgf·m</span></div>
     <div class="stages">${stages.map(s=>`<div>${t("r_stage")(s.p)}<b>${fmtT(s.v)}</b></div>`).join("")}</div>
     <div class="kv">
       <div>${t("r_preload")}</div><div>${fmt(r.F/1000,1)} kN</div>
-      <div>${t("r_as")}</div><div>${r.s.As} mm² / ${r.c.Rp} MPa</div>
+      <div>${t("r_thread")}</div><div>${thLabel(r.s,S.lang)} · ${r.s.fine?t("g_fine"):t("g_coarse")}</div>
+      <div>${t("r_as")}</div><div>${fmt(r.s.As,1)} mm² / ${r.c.Rp} MPa</div>
+      <div>${t("r_k")}</div><div>${fmt(r.K,3)}</div>
+      <div>${t("r_af")}</div><div>${r.s.af} mm${AF_DIN[r.s.d]?` (DIN ${AF_DIN[r.s.d]})`:""}</div>
+      ${cmp?`<div>${t("r_vs")(thLabel(cmpTh,S.lang))}</div><div>${cmp>0?"+":""}${fmt(cmp,0)} %</div>`:""}
       ${ratio>1?`<div>${t("r_ratio")}</div><div>${ratio} : 1</div><div>${t("r_input")}</div><div>${fmtT(setNm)} Nm</div>`:""}
       <div>${t("r_wrench")}</div><div>${wrench?t("wr_range")(wrench.min,wrench.max):"–"}</div>
       ${pull?`<div>${t("r_pull")} (L = ${Math.round(wrench.L*1000)} mm)</div><div>${fmt(pull,0)} N ≈ ${fmt(pull/9.81,0)} kg</div>`:""}
     </div>`;
 
   // wrenches
-  const key=[r.s.n,r.c.id,S.lube,S.nu,S.mult].join("|");
+  const key=[r.s.id,r.c.id,S.lube,S.nu,S.mult].join("|");
   showAnalog(wrench,setNm,animate&&key!==lastKey);lastKey=key;
   $("digitalBox").style.display=wrench||inNm>0?"":"none";
   showDigital(setNm);
 
   // table for all sizes
-  const rows=SIZES.map(s=>{const x=calc(S.cls,s.n,S.lube,S.nu);return `<tr class="${s.n===S.size?"cur":""}"><td>${s.n}</td><td>${fmtT(x.T)}</td><td>${fmt(x.F/1000,1)}</td></tr>`}).join("");
+  let rows="";
+  [false,true].forEach(f=>{rows+=`<tr><th colspan="4" style="text-align:left;padding-top:12px">${t(f?"g_fine":"g_coarse")}</th></tr>`;
+    THREADS.filter(x=>x.fine===f).forEach(th=>{const x=calc(S.cls,th.id,S.lube,S.nu);
+      rows+=`<tr class="${th.id===S.size?"cur":""}"><td>${thLabel(th,S.lang)}</td><td>${th.af}</td><td>${fmtT(x.T)}</td><td>${fmt(x.F/1000,1)}</td></tr>`})});
   $("tableBox").innerHTML=`<p>${S.type==="nut"?`${S.lang==="pl"?"Nakrętka":"Nut"} ${cNut} → ${r.c.id}`:r.c.id} · ${t("lube_"+S.lube)} · ν ${Math.round(S.nu*100)} %</p>
-    <div class="tblwrap"><table><thead><tr><th>${t("tb_size")}</th><th>${t("tb_t")}</th><th>${t("tb_f")}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="tblwrap"><table><thead><tr><th>${t("tb_size")}</th><th>AF mm</th><th>${t("tb_t")}</th><th>${t("tb_f")}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   save();
 }
 
