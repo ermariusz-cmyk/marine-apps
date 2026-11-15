@@ -56,6 +56,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .hp small{font:600 11px var(--font);opacity:.92;letter-spacing:.04em}
 .hp.g{background:#1a8a3c}
 .hp.r{background:#d3261c}
+.hp.n{background:var(--fill);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
 .hp:active{filter:brightness(.88)}
 #dpChip{background:var(--fill);color:var(--ink);font-weight:700}
 #dpChip small{color:var(--muted);opacity:1}
@@ -604,7 +605,7 @@ const lightOn = (k) => k === "dp" ? dpNow() : S.lights[k];
 function renderLights() {
   document.querySelectorAll(".hp[data-k]").forEach((b) => {
     const L = LIGHTS[b.dataset.k], on = lightOn(b.dataset.k);
-    b.className = "hp " + (on ? "g" : "r");
+    b.className = "hp " + (on ? "g" : b.dataset.k === "rada" || b.dataset.k === "cy" ? "n" : "r");
     b.innerHTML = "<small>" + L[0] + "</small>" + L[on ? 1 : 2];
     b.setAttribute("aria-label", L[0] + ": " + L[on ? 1 : 2].replace(/[▲▼] /, "") + ". Tap to change.");
   });
@@ -619,8 +620,10 @@ $("lights").onclick = (ev) => {
   const e = { id: uid(), t: n.time, text: LIGHTS[k][was ? 4 : 3] };
   if (!S.days[n.date]) S.days[n.date] = { loc: "", entries: [] };
   S.days[n.date].entries.push(e); sortEntries(S.days[n.date]);
-  if (cur === n.date) newId = e.id;
-  save(); render();
+  save();
+  if (cur !== n.date) goto(n.date);          // always show the entry that was just logged
+  newId = e.id; render();
+  const row = rowEl(e.id); if (row) row.scrollIntoView({ block: "center", behavior: "smooth" });
   toast("Logged " + n.time + " – " + e.text, "Undo", () => {
     if (k !== "dp") S.lights[k] = was;
     const d = S.days[n.date];
