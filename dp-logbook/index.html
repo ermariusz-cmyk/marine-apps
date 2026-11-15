@@ -63,6 +63,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sum div{background:var(--fill);border-radius:10px;padding:10px;text-align:center}
 .sum b{display:block;font-size:22px}
 .sum span{font-size:12px;color:var(--muted)}
+.two{margin-top:0}.two label{margin-top:10px!important}
+#print h2{font-size:12pt;margin:14px 0 4px;break-after:avoid}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.two div{min-width:0}
 .db input[type=date]{width:100%;border:1px solid var(--line);background:var(--fill);border-radius:9px;padding:9px 11px;min-height:44px;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none}
 #dpTbl{width:100%;border-collapse:collapse;font-size:14.5px}
@@ -234,6 +236,34 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
   </div>
 </dialog>
 
+<dialog id="printDlg">
+  <div class="dh"><h2>Print / save as PDF</h2><button data-close>Close</button></div>
+  <div class="db">
+    <label for="prWhat">What to print</label>
+    <select id="prWhat"><option value="day">This day</option><option value="range">Period: from – to</option><option value="all">Whole logbook</option></select>
+    <div id="prRange" hidden>
+      <div class="two">
+        <div><label for="prD1">From date</label><input type="date" id="prD1"></div>
+        <div><label for="prT1">From time (optional)</label><input type="text" id="prT1" inputmode="numeric" maxlength="5" placeholder="00:00" autocomplete="off"></div>
+        <div><label for="prD2">To date</label><input type="date" id="prD2"></div>
+        <div><label for="prT2">To time (optional)</label><input type="text" id="prT2" inputmode="numeric" maxlength="5" placeholder="24:00" autocomplete="off"></div>
+      </div>
+    </div>
+    <p id="prInfo"></p>
+    <div class="btns" style="margin-top:14px"><button class="b" id="prGo" style="background:var(--accent);color:var(--accent-ink)">Print</button></div>
+    <p>To save a PDF, choose “Save as PDF” as the printer (on iPad / iPhone: Share in the print preview).</p>
+  </div>
+</dialog>
+
+<dialog id="impDlg">
+  <div class="dh"><h2>Import backup</h2><button data-close>Cancel</button></div>
+  <div class="db">
+    <p id="impInfo" style="margin:0 0 14px;font-size:15px;color:var(--ink)"></p>
+    <div class="btns"><button class="b" id="impMerge" style="background:var(--accent);color:var(--accent-ink)">Merge into this logbook</button><button class="b red" id="impReplace">Replace this logbook</button></div>
+    <p>Merge adds the entries from the file that are not here yet and keeps everything already on this device. Replace deletes what is on this device and loads the file instead.</p>
+  </div>
+</dialog>
+
 <dialog id="setDlg">
   <div class="dh"><h2>Settings</h2><button data-close>Done</button></div>
   <div class="db">
@@ -248,13 +278,12 @@ dialog::backdrop{background:rgba(8,14,18,.55)}
 
     <h3>Data</h3>
     <div class="btns">
-      <button class="b" id="printAll">Print all days</button>
       <button class="b" id="csv">Export CSV</button>
       <button class="b" id="backup">Save backup file</button>
-      <button class="b" id="restore">Restore from backup</button>
+      <button class="b" id="restore">Import backup file</button>
       <button class="b red" id="wipe">Delete all entries</button>
     </div>
-    <p>The logbook is stored in this browser on this device only. Save a backup file regularly, and use it to move the logbook to another device.</p>
+    <p>Every change is saved automatically as you type, in this browser on this device only. To use the logbook on another device, save a backup file here and import it there – you can merge it with what is already on that device or replace it. Save a backup file regularly.</p>
     <input type="file" id="file" accept=".json,application/json" hidden>
   </div>
 </dialog>
@@ -784,26 +813,53 @@ $("resetEvents").onclick = () => { if (confirm("Replace the event list with the 
 $("setDlg").addEventListener("close", () => { render(); tick(); });
 
 /* ---------- print / export ---------- */
-function printDays(dates) {
-  $("print").innerHTML = dates.map((d) => {
+function printDays(dates, t1, t2) {   // t1 limits the first day, t2 the last day
+  const tz = S.tz === "device" ? "ship's local time" : tzLabel();
+  const one = dates.length === 1 && !t1 && !t2;
+  const a = dates[0], b = dates[dates.length - 1];
+  let body = "";
+  for (const d of dates) {
     const v = S.days[d] || { loc: "", entries: [] };
-    const rows = v.entries.filter((e) => e.t || e.text.trim());
-    return '<section class="pday"><div class="ph"><h1>DP LOGBOOK</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") + fmtDate(d, true) + "</div></div>" +
-      '<div class="pm"><span>Times: ' + (S.tz === "device" ? "ship's local time" : tzLabel()) + "</span>" + (v.loc ? "<span>Location / operation: " + esc(v.loc) + "</span>" : "") + "<span>On DP: " + fmtDur(dpMinutes(d)) + "</span></div>" +
+    const rows = v.entries.filter((e) => (e.t || e.text.trim()) && !(t1 && d === a && (!e.t || e.t < t1)) && !(t2 && d === b && (!e.t || e.t > t2)));
+    if (!rows.length && !one) continue;
+    body += (one ? "" : "<h2>" + fmtDate(d, true) + "</h2>") +
+      '<div class="pm">' + (one ? "<span>Times: " + tz + "</span>" : "") + (v.loc ? "<span>Location / operation: " + esc(v.loc) + "</span>" : "") + "<span>On DP this day: " + fmtDur(dpMinutes(d)) + "</span></div>" +
       "<table><thead><tr><th>Time</th><th>Event</th></tr></thead><tbody>" +
       (rows.length ? rows.map((e) => "<tr><td>" + esc(e.t) + "</td><td>" + esc(e.text) + "</td></tr>").join("") : '<tr><td></td><td>No entries</td></tr>') +
-      "</tbody></table><div class=\"ps\"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>";
-  }).join("");
+      "</tbody></table>";
+  }
+  if (!body) return toast("No entries in this period"), false;
+  $("print").innerHTML = '<section class="pday"><div class="ph"><h1>DP LOGBOOK</h1><div>' + (S.vessel ? "<b>" + esc(S.vessel) + "</b><br>" : "") +
+    (one ? fmtDate(a, true) : fmtDate(a) + (t1 ? " " + t1 : "") + " – " + fmtDate(b) + (t2 ? " " + t2 : "") + "<br>Times: " + tz) + "</div></div>" + body +
+    '<div class="ps"><div>DPO (name / signature)</div><div>Master (name / signature)</div></div></section>';
   if (document.activeElement) document.activeElement.blur();
   setTimeout(() => print(), 50);
+  return true;
 }
-$("printBtn").onclick = () => printDays([cur]);
-$("printAll").onclick = () => {
+function printSel() {            // what the print dialog currently selects
+  const w = $("prWhat").value, ds = Object.keys(S.days).sort();
+  if (w === "day") return { dates: [cur] };
+  if (w === "all") return { dates: ds };
+  let a = $("prD1").value, b = $("prD2").value;
+  if (!a || !b) return { dates: [] };
+  let t1 = parseTime($("prT1").value) || "", t2 = /^24[:.]?00$/.test($("prT2").value.trim()) ? "" : parseTime($("prT2").value) || "";
+  if (a > b) [a, b] = [b, a];
+  if (t1 === "00:00") t1 = "";
+  return { dates: ds.filter((d) => d >= a && d <= b), t1, t2 };
+}
+function printInfo() {
+  $("prRange").hidden = $("prWhat").value !== "range";
+  const r = printSel(), n = r.dates.filter((d) => S.days[d]).length;
+  $("prInfo").textContent = $("prWhat").value === "day" ? fmtDate(cur, true) : n + (n === 1 ? " day" : " days") + " with entries";
+}
+$("printBtn").onclick = () => {
   prune(cur); save();
   const ds = Object.keys(S.days).sort();
-  if (!ds.length) return toast("Nothing to print yet");
-  $("setDlg").close(); printDays(ds);
+  $("prWhat").value = "day"; $("prD1").value = cur; $("prD2").value = cur; $("prT1").value = $("prT2").value = "";
+  printInfo(); $("printDlg").showModal();
 };
+$("printDlg").addEventListener("change", printInfo);
+$("prGo").onclick = () => { const r = printSel(); if (!r.dates.length) return toast("No entries in this period"); if (printDays(r.dates, r.t1, r.t2)) $("printDlg").close(); };
 function download(name, text, type) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type }));
@@ -820,14 +876,36 @@ $("csv").onclick = () => {
 };
 $("backup").onclick = () => { prune(cur); save(); download("DP_Logbook_backup_" + slug() + "_" + now().date + ".json", JSON.stringify(S, null, 1), "application/json"); };
 $("restore").onclick = () => $("file").click();
+let impData = null;
 $("file").onchange = async (ev) => {
   const f = ev.target.files[0]; ev.target.value = ""; if (!f) return;
-  let data;
-  try { data = JSON.parse(await f.text()); if (!data || typeof data.days !== "object") throw 0; }
+  try { impData = JSON.parse(await f.text()); if (!impData || typeof impData.days !== "object") throw 0; }
   catch (e) { return alert("This file is not a DP Logbook backup."); }
-  const n = Object.keys(data.days).length;
-  if (!confirm("Replace the logbook on this device with the backup (" + n + " day" + (n === 1 ? "" : "s") + ")?\nEverything currently stored here will be overwritten.")) return;
-  S = normalise(data); save(); $("setDlg").close(); goto(now().date); toast("Backup restored");
+  impData = normalise(impData);
+  const ds = Object.keys(impData.days).sort(), n = ds.reduce((x, d) => x + impData.days[d].entries.length, 0);
+  $("impInfo").textContent = "The file" + (impData.vessel ? " (" + impData.vessel + ")" : "") + " holds " + n + (n === 1 ? " entry" : " entries") + " on " + ds.length + (ds.length === 1 ? " day" : " days") +
+    (ds.length ? ", " + fmtDate(ds[0]) + " – " + fmtDate(ds[ds.length - 1]) : "") + ".";
+  $("impDlg").showModal();
+};
+function impDone(msg) { impData = null; save(); $("impDlg").close(); $("setDlg").close(); goto(now().date); toast(msg); }
+$("impReplace").onclick = () => {
+  if (!impData || !confirm("Delete the logbook on this device and load the file instead?")) return;
+  S = impData; impDone("Logbook replaced from backup");
+};
+$("impMerge").onclick = () => {
+  if (!impData) return;
+  let added = 0;
+  for (const d of Object.keys(impData.days)) {
+    const src = impData.days[d], dst = S.days[d] || (S.days[d] = { loc: "", entries: [] });
+    if (!dst.loc) dst.loc = src.loc;
+    const ids = new Set(dst.entries.map((e) => e.id)), same = new Set(dst.entries.map((e) => e.t + "|" + e.text.trim()));
+    for (const e of src.entries) if (!ids.has(e.id) && !same.has(e.t + "|" + e.text.trim())) { dst.entries.push(e); added++; }
+    sortEntries(dst); prune(d);
+  }
+  const have = new Set(S.events.map((x) => x.trim().toLowerCase()));
+  for (const x of impData.events) if (!have.has(x.trim().toLowerCase())) S.events.push(x);
+  if (!S.vessel) S.vessel = impData.vessel;
+  impDone(added + (added === 1 ? " entry" : " entries") + " added from backup");
 };
 $("wipe").onclick = () => {
   if (!confirm("Delete ALL logbook entries on this device?\nThis cannot be undone. Save a backup file first if unsure.")) return;
@@ -837,6 +915,7 @@ $("wipe").onclick = () => {
 /* ---------- start ---------- */
 addEventListener("pagehide", () => { prune(cur); save(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});   // ask the browser not to clear the logbook
 render(); tick(); setInterval(tick, 5000);
 </script>
 </body>
