@@ -375,7 +375,7 @@ function cv(st,max,compact){
   if(m>=60||s>=60)return null;const v=d+m/60+s/3600;return v>max+1e-9?null:v}
 
 function cleanName(t){
-  let s=String(t).replace(/\b(Easting|Northing|East|North|Latitude|Longitude|Lat|Lon|Long|UTM|Zone)\b/gi," ").replace(/["'°′″|;:=]+/g," ").replace(/\s+/g," ").trim();
+  let s=String(t).replace(/[\u0000-\u001f\u007f-\u009f\ufffd]/g," ").replace(/\b(Easting|Northing|East|North|Latitude|Longitude|Lat|Lon|Long|UTM|Zone)\b/gi," ").replace(/["'°′″|;:=]+/g," ").replace(/\s+/g," ").trim();
   s=s.replace(/^[\s,.\-–/()\[\]]+|[\s,.\-–/()\[\]]+$/g,"").trim();
   if(/^\d+$/.test(s))s="WP "+s;
   return s.slice(0,40)}
@@ -483,7 +483,7 @@ function parseText(text,o){
     const sg=opt.mode==="en"?null:scanSingle(normLine(t));
     if(sg){if(pend&&pend.type!==sg.type){const lat=sg.type==="lat"?sg.val:pend.val,lon=sg.type==="lon"?sg.val:pend.val;pts.push({name:"",lat,lon});pend=null}else pend=sg;continue}
     const nn=(normLine(t).match(/\d+(?:\.\d+)?/g)||[]).length;
-    if(nn>=2&&/[°'"NSEW]|\d\.\d|\d{5}/.test(t))bad.push(t.slice(0,120))}
+    if(nn>=2&&!/[\u0000-\u0008\u000e-\u001f\u007f-\u009f\ufffd]/.test(t)&&/[°'"NSEW]|\d\.\d|\d{5}/.test(t))bad.push(t.slice(0,120))}
   return{pts,bad,notes}}
 
 /* --- single coordinate typed into a table cell: returns number or null --- */
@@ -576,7 +576,7 @@ undo:"Undo",
 log_ok:(n,s)=>`Added ${n} waypoint${n===1?"":"s"} from ${s}.`,log_none:"No coordinates found.",log_bad:n=>`${n} line${n===1?"":"s"} looked like coordinates but could not be read:`,
 log_grid:(n,g)=>`${n} point${n===1?"":"s"} read as Easting / Northing in ${g}. Check the grid in Reading options.`,
 log_swap:n=>`${n} line${n===1?"":"s"} had Lat and Lon the wrong way round; fixed.`,
-err_file:(f,e)=>`${f}: ${e}`,err_old:"This file type is not supported. Save it as .docx, .xlsx or PDF, or copy and paste the text.",
+err_img:"This is a picture. Plot to Route cannot read text from pictures. Copy the coordinates as text (or retype them) and paste them here, or use a PDF that contains text.",err_bin:"This file does not look like text, so it was not read. Use Word, Excel, a PDF with text, or plain text.",err_file:(f,e)=>`${f}: ${e}`,err_old:"This file type is not supported. Save it as .docx, .xlsx or PDF, or copy and paste the text.",
 err_pdf:"No text found in this PDF (a scan?). Copy the coordinates and paste them here instead.",err_zip:"This browser is too old to open Word and Excel files. Paste the text instead.",
 err_clip:"The clipboard could not be read. Paste into the box above (Ctrl+V or long-press → Paste).",
 t_total:(n,d,g)=>`<span><b>${n}</b> waypoint${n===1?"":"s"}</span><span>${g}: <b>${d}</b> NM</span>`,
@@ -621,7 +621,7 @@ undo:"Cofnij",
 log_ok:(n,s)=>`Dodano punktów: ${n} (${s}).`,log_none:"Nie znaleziono współrzędnych.",log_bad:n=>`Wierszy wyglądających jak współrzędne, których nie udało się odczytać: ${n}:`,
 log_grid:(n,g)=>`Punkty odczytane jako Easting / Northing w siatce ${g}: ${n}. Sprawdź siatkę w Opcjach wczytywania.`,
 log_swap:n=>`Wiersze z zamienioną szerokością i długością (poprawione): ${n}.`,
-err_file:(f,e)=>`${f}: ${e}`,err_old:"Ten typ pliku nie jest obsługiwany. Zapisz go jako .docx, .xlsx lub PDF albo skopiuj i wklej tekst.",
+err_img:"To jest obraz. Plot to Route nie czyta tekstu z obrazów. Skopiuj współrzędne jako tekst (lub przepisz je) i wklej tutaj albo użyj PDF z tekstem.",err_bin:"Ten plik nie wygląda na tekst, więc go nie wczytano. Użyj Worda, Excela, PDF z tekstem albo zwykłego tekstu.",err_file:(f,e)=>`${f}: ${e}`,err_old:"Ten typ pliku nie jest obsługiwany. Zapisz go jako .docx, .xlsx lub PDF albo skopiuj i wklej tekst.",
 err_pdf:"W tym PDF-ie nie ma tekstu (skan?). Skopiuj współrzędne i wklej je tutaj.",err_zip:"Ta przeglądarka jest za stara, by otwierać pliki Word i Excel. Wklej tekst.",
 err_clip:"Nie można odczytać schowka. Wklej do pola powyżej (Ctrl+V lub przytrzymaj → Wklej).",
 t_total:(n,d,g)=>`<span>Punktów: <b>${n}</b></span><span>${g}: <b>${d}</b> NM</span>`,
@@ -845,15 +845,24 @@ function routeXml(text){ // RTZ or GPX
     for(const w of l){const nm=w.getElementsByTagName("name")[0];pts.push({name:nm?nm.textContent.trim():"",lat:+w.getAttribute("lat"),lon:+w.getAttribute("lon")})}}
   const info=d.getElementsByTagName("routeInfo")[0]||d.getElementsByTagName("rte")[0];
   return{pts:pts.filter(p=>isFinite(p.lat)&&isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180),bad:[],notes:{},info}}
+function sniff(buf){const u=new Uint8Array(buf.slice(0,16)),a=(...b)=>b.every((x,i)=>u[i]===x),str=(o,x)=>[...x].every((c,i)=>u[o+i]===c.charCodeAt(0));
+  if(a(0x89,0x50,0x4e,0x47)||a(0xff,0xd8,0xff)||str(0,"GIF8")||str(0,"BM")||a(0x49,0x49,0x2a,0)||a(0x4d,0x4d,0,0x2a)||(str(0,"RIFF")&&str(8,"WEBP"))||str(4,"ftyp"))return"image";
+  if(str(0,"%PDF"))return"pdf";if(a(0x50,0x4b,3,4))return"zip";return null}
+function looksBinary(buf){const u=new Uint8Array(buf.slice(0,4096));if(!u.length)return false;
+  if((u[0]===0xff&&u[1]===0xfe)||(u[0]===0xfe&&u[1]===0xff))return false;
+  let bad=0;for(const b of u)if(b===0||(b<9)||(b>13&&b<32))bad++;return bad/u.length>0.005}
 async function readFile(f){
-  const ext=(f.name.split(".").pop()||"").toLowerCase(),buf=await f.arrayBuffer();
+  let ext=(f.name.split(".").pop()||"").toLowerCase();const buf=await f.arrayBuffer(),kind=sniff(buf);
+  if(kind==="image"||/^(png|jpe?g|gif|webp|bmp|tiff?|heic|heif)$/.test(ext))throw new Error(t("err_img"));
+  if(kind==="pdf")ext="pdf";
+  if(kind==="zip"&&!/^(docx|xlsx|xlsm)$/.test(ext))throw new Error(t("err_old"));
   if(["rtz","gpx","xml"].includes(ext)){const r=routeXml(decodeText(buf));
     if(r.info&&!S.route.name){const n=r.info.getAttribute("routeName")||(r.info.getElementsByTagName("name")[0]||{}).textContent;if(n){S.route.name=n.trim();$("#rName").value=S.route.name}}return r}
   let text;
   if(ext==="docx")text=await docxText(buf);else if(ext==="xlsx"||ext==="xlsm")text=await xlsxText(buf);
   else if(ext==="pdf"){text=await pdfText(buf);if(!text.trim())throw new Error(t("err_pdf"))}
   else if(["doc","xls","odt","ods","rtf","pages","numbers"].includes(ext))throw new Error(t("err_old"));
-  else text=decodeText(buf);
+  else{if(looksBinary(buf))throw new Error(t("err_bin"));text=decodeText(buf)}
   return parseText(text,rOpts())}
 async function handleFiles(files){
   for(const f of files){try{const r=await readFile(f);ingest(r,f.name)}catch(e){$("#log").innerHTML=`<div class="note bad">${esc(t("err_file")(f.name,e.message||e))}</div>`}}}
