@@ -13,8 +13,8 @@ dp-footprint/         DP Footprint Plot
 port-clearance/       Port Clearance (FAL 1–7, Maritime Declaration of Health)
                       originals/ – wzory formularzy, z których odwzorowano wydruk
 dp-logbook/           DP Logbook (wpisy zdarzeń wg daty i czasu, światła HiPAP/RadaScan/CyScan, DP hours i DP days, wydruk, kopia zapasowa)
-plot-to-route/       Plot to Route (współrzędne w dowolnym formacie lub Easting/Northing z tekstu, Worda, Excela, PDF-a → plik RTZ do ECDIS, GPX, CSV; EN / PL)
-                      vendor/ – pdf.js (Apache 2.0) do czytania PDF offline
+plot-to-route/       Plot to Route (współrzędne w dowolnym formacie lub Easting/Northing z tekstu, Worda, Excela, PDF-a oraz obrazów JPG/PNG/DNG (rozpoznawanie tekstu w przeglądarce) → plik RTZ do ECDIS, GPX, CSV; EN / PL)
+                      vendor/ – pdf.js i Tesseract (Apache 2.0): czytanie PDF i obrazów, vendor/ocr ładuje się dopiero przy pierwszym obrazie
 torque-wrench/        Tight & Right (moment dokręcania śrub, nakrętek i szpilek M5–M48, gwint zwykły i drobny, animowany klucz analogowy i elektroniczny, instrukcja PL/EN)
 ```
 
