@@ -5,27 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CrewVault</title>
 <meta name="description" content="Keep your seafarer certificates and documents in one place: scan, sort by Flag, STCW and IMCA, track expiry dates, share by email. Works offline.">
-<meta name="theme-color" content="#14232d">
+<meta name="theme-color" content="#0c9786">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(()=>{}))}</script>
 <style>
 /* Layout: iOS-style grouped list under a large title, sheets slide up from the bottom. */
-:root{--bg:#eef3f9;--card:#ffffff;--ink:#0c1f33;--muted:#5d7084;--line:#dde6ef;--fill:#e8eef5;--accent:#1d5cff;--accent-ink:#ffffff;--bar:rgba(238,243,249,.82);--shadow:0 12px 36px rgba(12,31,51,.20);--tshadow:0 1px 2px rgba(12,31,51,.06),0 6px 18px rgba(12,31,51,.07);--tshadow-hi:0 14px 34px rgba(12,31,51,.16);--navy:#14232d;--ok:#17a673;--warn:#e98f00;--bad:#e5392f;--none:#7c8da0;--c-flag:#1d5cff;--c-stcw:#0b9c9c;--c-imca:#7a5af8;--c-other:#7c8da0;--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#071320;--card:#0f2135;--ink:#e8f1f9;--muted:#8ea6bb;--line:#1b3249;--fill:#142a40;--accent:#4d86ff;--accent-ink:#04101f;--bar:rgba(7,19,32,.78);--shadow:0 12px 36px rgba(0,0,0,.6);--tshadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);--tshadow-hi:0 16px 38px rgba(0,0,0,.55);--ok:#2fd39a;--warn:#ffb340;--bad:#ff6a5f;--none:#7c8da0;--c-flag:#5b92ff;--c-stcw:#2cc7c7;--c-imca:#a08cff;--c-other:#8b9bad;color-scheme:dark;}}
-:root[data-theme="dark"]{--bg:#071320;--card:#0f2135;--ink:#e8f1f9;--muted:#8ea6bb;--line:#1b3249;--fill:#142a40;--accent:#4d86ff;--accent-ink:#04101f;--bar:rgba(7,19,32,.78);--shadow:0 12px 36px rgba(0,0,0,.6);--tshadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);--tshadow-hi:0 16px 38px rgba(0,0,0,.55);--ok:#2fd39a;--warn:#ffb340;--bad:#ff6a5f;--none:#7c8da0;--c-flag:#5b92ff;--c-stcw:#2cc7c7;--c-imca:#a08cff;--c-other:#8b9bad;color-scheme:dark;}
-:root[data-palette="graphite"]{--bg:#f3f3f1;--card:#ffffff;--ink:#151719;--muted:#6a7075;--line:#e4e4e0;--fill:#ececE8;--accent:#0c9786;--accent-ink:#ffffff;--bar:rgba(243,243,241,.82);--shadow:0 12px 36px rgba(0,0,0,.18);--tshadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.06);--tshadow-hi:0 14px 34px rgba(0,0,0,.14);}
-@media (prefers-color-scheme:dark){:root[data-palette="graphite"]:not([data-theme="light"]){--bg:#0c0e0f;--card:#171a1c;--ink:#ededeb;--muted:#9aa0a5;--line:#26292c;--fill:#212528;--accent:#2fd0b9;--accent-ink:#04201b;--bar:rgba(12,14,15,.78);--shadow:0 12px 36px rgba(0,0,0,.6);--tshadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);--tshadow-hi:0 16px 38px rgba(0,0,0,.55);color-scheme:dark;}}
-:root[data-palette="graphite"][data-theme="dark"]{--bg:#0c0e0f;--card:#171a1c;--ink:#ededeb;--muted:#9aa0a5;--line:#26292c;--fill:#212528;--accent:#2fd0b9;--accent-ink:#04201b;--bar:rgba(12,14,15,.78);--shadow:0 12px 36px rgba(0,0,0,.6);--tshadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);--tshadow-hi:0 16px 38px rgba(0,0,0,.55);color-scheme:dark;}
-:root[data-palette="harbor"]{--bg:#eef1f4;--card:#ffffff;--ink:#14232d;--muted:#5b6b76;--line:#dfe5ea;--fill:#e8edf1;--accent:#f0483c;--accent-ink:#ffffff;--bar:rgba(238,241,244,.82);--shadow:0 12px 36px rgba(20,35,45,.2);--tshadow:0 1px 2px rgba(20,35,45,.06),0 6px 18px rgba(20,35,45,.07);--tshadow-hi:0 14px 34px rgba(20,35,45,.16);}
-@media (prefers-color-scheme:dark){:root[data-palette="harbor"]:not([data-theme="light"]){--bg:#101c25;--card:#1a2b37;--ink:#eaf0f4;--muted:#93a5b2;--line:#263a48;--fill:#203240;--accent:#ff7a6e;--accent-ink:#240b08;--bar:rgba(16,28,37,.8);--shadow:0 12px 36px rgba(0,0,0,.55);--tshadow:0 1px 2px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.3);--tshadow-hi:0 16px 38px rgba(0,0,0,.5);color-scheme:dark;}}
-:root[data-palette="harbor"][data-theme="dark"]{--bg:#101c25;--card:#1a2b37;--ink:#eaf0f4;--muted:#93a5b2;--line:#263a48;--fill:#203240;--accent:#ff7a6e;--accent-ink:#240b08;--bar:rgba(16,28,37,.8);--shadow:0 12px 36px rgba(0,0,0,.55);--tshadow:0 1px 2px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.3);--tshadow-hi:0 16px 38px rgba(0,0,0,.5);color-scheme:dark;}
-.pal{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
-.pal button{background:var(--card);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:600;border:2px solid transparent}
-.pal button[aria-pressed="true"]{border-color:var(--accent)}
-.pal .sw3{display:flex;border-radius:10px;overflow:hidden;width:100%;height:26px}
-.pal .sw3 i{flex:1}
+:root{--bg:#f3f3f1;--card:#ffffff;--ink:#151719;--muted:#6a7075;--line:#e4e4e0;--fill:#ececE8;--accent:#0c9786;--accent-ink:#ffffff;--bar:rgba(243,243,241,.82);--shadow:0 12px 36px rgba(0,0,0,.18);--tshadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.06);--tshadow-hi:0 14px 34px rgba(0,0,0,.14);--navy:#14232d;--ok:#17a673;--warn:#e98f00;--bad:#e5392f;--none:#7c8da0;--c-flag:#1d5cff;--c-stcw:#0b9c9c;--c-imca:#7a5af8;--c-other:#7c8da0;--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c0e0f;--card:#171a1c;--ink:#ededeb;--muted:#9aa0a5;--line:#26292c;--fill:#212528;--accent:#2fd0b9;--accent-ink:#04201b;--bar:rgba(12,14,15,.78);--shadow:0 12px 36px rgba(0,0,0,.6);--tshadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);--tshadow-hi:0 16px 38px rgba(0,0,0,.55);--ok:#2fd39a;--warn:#ffb340;--bad:#ff6a5f;--none:#7c8da0;--c-flag:#5b92ff;--c-stcw:#2cc7c7;--c-imca:#a08cff;--c-other:#8b9bad;color-scheme:dark;}}
+:root[data-theme="dark"]{--bg:#0c0e0f;--card:#171a1c;--ink:#ededeb;--muted:#9aa0a5;--line:#26292c;--fill:#212528;--accent:#2fd0b9;--accent-ink:#04201b;--bar:rgba(12,14,15,.78);--shadow:0 12px 36px rgba(0,0,0,.6);--tshadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);--tshadow-hi:0 16px 38px rgba(0,0,0,.55);--ok:#2fd39a;--warn:#ffb340;--bad:#ff6a5f;--none:#7c8da0;--c-flag:#5b92ff;--c-stcw:#2cc7c7;--c-imca:#a08cff;--c-other:#8b9bad;color-scheme:dark;}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:radial-gradient(900px 420px at 8% -8%,color-mix(in srgb,var(--accent) 13%,transparent),transparent),var(--bg);color:var(--ink);font:17px/1.35 var(--font);-webkit-font-smoothing:antialiased;
@@ -712,7 +701,6 @@ function validityPct(d, st) {
 }
 function render() {
   document.documentElement.lang = getLang();
-  document.documentElement.dataset.palette = lsGet("crewvault.palette") || "ocean";
   document.querySelectorAll("[data-i]").forEach(e => e.textContent = t(e.dataset.i));
   document.querySelectorAll("[data-iph]").forEach(e => e.placeholder = t(e.dataset.iph));
   $("#bSelect").textContent = selecting ? t("done") : t("select");
@@ -1068,12 +1056,10 @@ async function importBackup(file) {
 function openSettings() {
   const sh = openSheet({ title: t("settings"), right: { text: t("done"), fn: () => sh.close(), bold: true }, body: api => {
     api.body.innerHTML =
-      `<div class="hd">${esc(t("appearance"))}</div><div class="pal" id="sPal">${[["ocean", "#1d5cff", "#0c1f33", "#eef3f9"], ["graphite", "#0c9786", "#151719", "#f3f3f1"], ["harbor", "#f0483c", "#14232d", "#eef1f4"]].map(([k, a, b, c]) => `<button data-v="${k}" aria-pressed="${(lsGet("crewvault.palette") || "ocean") === k}"><span class="sw3"><i style="background:${a}"></i><i style="background:${b}"></i><i style="background:${c}"></i></span>${esc(t("pal_" + k))}</button>`).join("")}</div>` +
       `<div class="hd">${esc(t("ocrSetting"))}</div><div class="form"><div class="f"><label id="lOcr" style="width:auto">${esc(t("ocrSetting"))}</label><div class="sw"><button class="toggle" id="sOcr" role="switch" aria-checked="${ocrEnabled()}" aria-labelledby="lOcr"></button></div></div></div><div class="note" style="margin-top:-8px">${esc(t("ocrNote"))}</div>` +
       `<div class="hd">${esc(t("backup"))}</div><div class="btnrow"><button class="big" id="sExp">${esc(t("exportBackup"))}</button><button class="big" id="sImp">${esc(t("importBackup"))}</button></div><div class="note">${esc(t("backupNote"))}</div>` +
       `<div class="hd">${esc(t("privacy"))}</div><div class="note" style="margin-top:0">${esc(t("privacyText"))}</div>` +
       `<div class="hd">${esc(t("storage"))}</div><div class="note" style="margin-top:0">${esc(t("storageText", { n: docs.length }))}</div>`;
-    api.body.querySelectorAll("#sPal button").forEach(b => b.onclick = () => { lsSet("crewvault.palette", b.dataset.v); api.body.querySelectorAll("#sPal button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
     api.body.querySelector("#sOcr").onclick = e => { const on = e.currentTarget.getAttribute("aria-checked") !== "true"; e.currentTarget.setAttribute("aria-checked", String(on)); lsSet("crewvault.ocr", on ? "1" : "0"); };
     api.body.querySelector("#sExp").onclick = () => exportBackup();
     api.body.querySelector("#sImp").onclick = () => { const i = $("#inBackup"); i.value = ""; i.onchange = () => i.files[0] && importBackup(i.files[0]); i.click(); };
