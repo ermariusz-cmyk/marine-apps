@@ -60,6 +60,17 @@ h1.large{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:4px 0 12px;
 .meta label{display:flex;align-items:center;gap:6px}
 .meta select{background:none;border:0;color:var(--accent);font-size:13px;font-weight:600;-webkit-appearance:none;appearance:none;padding:4px 2px;cursor:pointer}
 
+.groups .badge{display:none}
+.groups{display:flex;flex-direction:column;gap:26px}
+.sh{display:flex;align-items:center;gap:9px;margin:0 2px 11px}
+.sh .si{display:flex;width:30px;height:30px;border-radius:10px;align-items:center;justify-content:center;background:color-mix(in srgb,var(--cc) 16%,transparent);color:var(--cc)}
+.sh .si svg{width:18px;height:18px}
+.sh h2{font-size:19px;letter-spacing:-.01em;margin:0;font-weight:700}
+.sh em{font-style:normal;color:var(--muted);font-weight:600;font-size:14px}
+.sh .sd{display:flex;gap:8px;margin-left:4px}
+.sh .sd span{display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:var(--sc)}
+.sh .sd span::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sc)}
+.sh .more{margin-left:auto;color:var(--accent);font-weight:600;font-size:14px;min-height:36px;padding:0 4px;white-space:nowrap}
 .sub{color:var(--muted);font-size:15px;margin:-4px 0 14px}
 .sub b{color:var(--ink);font-weight:600}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px}
@@ -270,7 +281,7 @@ const TX = {
     sort_expiry: "Expiry date", sort_name: "Name", sort_cat: "Category", sort_issuer: "Issued by", sort_issued: "Issue date",
     emptyTitle: "No documents yet", emptyText: "Tap + to scan your first certificate.", noMatch: "Nothing matches",
     pageLimit: "Only the first {n} pages were added", moveLeft: "Move page earlier", moveRight: "Move page later", pages: "{n} pages",
-    addShort: "Add", appearance: "Appearance", pal_ocean: "Ocean", pal_graphite: "Graphite", pal_harbor: "Harbor", stat_ok: "Valid", stat_warn: "Expiring", stat_bad: "Expired",
+    showAll: "Show all ({n})", addShort: "Add", appearance: "Appearance", pal_ocean: "Ocean", pal_graphite: "Graphite", pal_harbor: "Harbor", stat_ok: "Valid", stat_warn: "Expiring", stat_bad: "Expired",
     dLeft: "d left", yLeft: "y left", expiredL: "Expired", expAgo: "{n} d ago", todayL: "Today", noExpL: "No expiry", noDateL: "No date", nextExp: "Next expiry", inN: "in {n} d", docsN: "{n} documents", allOk: "Nothing expires soon",
     ocrReading: "Reading the document…", ocrDone: "Details read from the scan. Check the fields marked ✦.", ocrNone: "No details found. Rotate the scan or enter them by hand.", ocrAgain: "Read details", ocrSetting: "Read details from scans", ocrNote: "Recognition runs on this device. Nothing is uploaded.", ocrFail: "Reading is not available here",
     selAll: "Select all", shareAllN: "Share all ({n})", shareShown: "Share shown ({n})", selectDocs: "Select documents…", share: "Share", shareN: "Share ({n})", shareAll: "Share all", print: "Print",
@@ -295,7 +306,7 @@ const TX = {
     sort_expiry: "Data ważności", sort_name: "Nazwa", sort_cat: "Kategoria", sort_issuer: "Wystawca", sort_issued: "Data wydania",
     emptyTitle: "Brak dokumentów", emptyText: "Dotknij +, aby zeskanować pierwszy certyfikat.", noMatch: "Brak wyników",
     pageLimit: "Dodano tylko pierwsze strony: {n}", moveLeft: "Przesuń stronę wcześniej", moveRight: "Przesuń stronę później", pages: "Stron: {n}",
-    addShort: "Dodaj", appearance: "Wygląd", pal_ocean: "Ocean", pal_graphite: "Grafit", pal_harbor: "Port", stat_ok: "Ważne", stat_warn: "Wygasają", stat_bad: "Wygasłe",
+    showAll: "Pokaż wszystkie ({n})", addShort: "Dodaj", appearance: "Wygląd", pal_ocean: "Ocean", pal_graphite: "Grafit", pal_harbor: "Port", stat_ok: "Ważne", stat_warn: "Wygasają", stat_bad: "Wygasłe",
     dLeft: "dni", yLeft: "lat", expiredL: "Wygasł", expAgo: "{n} dni temu", todayL: "Dzisiaj", noExpL: "Bezterminowy", noDateL: "Brak daty", nextExp: "Najbliższy termin", inN: "za {n} dni", docsN: "Dokumentów: {n}", allOk: "Nic nie wygasa wkrótce",
     ocrReading: "Odczytuję dokument…", ocrDone: "Dane odczytane ze skanu. Sprawdź pola oznaczone ✦.", ocrNone: "Nie znaleziono danych. Obróć skan lub wpisz je ręcznie.", ocrAgain: "Odczytaj dane", ocrSetting: "Odczyt danych ze skanów", ocrNote: "Rozpoznawanie działa na tym urządzeniu. Nic nie jest wysyłane.", ocrFail: "Odczyt nie jest tu dostępny",
     selAll: "Zaznacz wszystko", shareAllN: "Udostępnij wszystkie ({n})", shareShown: "Udostępnij widoczne ({n})", selectDocs: "Wybierz dokumenty…", share: "Udostępnij", shareN: "Udostępnij ({n})", shareAll: "Udostępnij wszystkie", print: "Drukuj",
@@ -715,7 +726,7 @@ function render() {
   $("#count").textContent = list.length + " / " + docs.length;
   $("#empty").hidden = list.length > 0; box.hidden = list.length === 0;
   if (!list.length) { $("#empty h2").textContent = docs.length ? t("noMatch") : t("emptyTitle"); $("#empty p").hidden = !!docs.length; }
-  for (const d of list) {
+  const tileEl = d => {
     const st = status(d), row = document.createElement("div");
     row.className = "tile" + (selected.has(d.id) ? " sel" : ""); row.dataset.id = d.id;
     row.style.setProperty("--cc", catColor(d.cat)); row.style.setProperty("--sc", `var(--${st.cls})`);
@@ -727,8 +738,24 @@ function render() {
       (pct ? `<div class="vbar"><i style="width:${pct.toFixed(0)}%"></i></div>` : `<div class="vbar" style="background:none"></div>`) +
       `<div class="r3"><span>${esc(fmtShort(d.issued))}</span><span>${d.noExpiry ? "" : esc(fmtShort(d.expiry))}</span></div></div>`;
     row.onclick = () => { if (selecting) { toggleSel(d.id, row); } else openEditor(d); };
-    box.appendChild(row);
-  }
+    return row;
+  };
+  const GROUP_LIMIT = 4, grouped = fCat === "all" && fStat === "all" && !query.trim();
+  if (grouped && list.length) {
+    box.className = "groups";
+    for (const c of CATS) {
+      const items = list.filter(d => d.cat === c.id); if (!items.length) continue;
+      const sec = document.createElement("section"); sec.style.setProperty("--cc", c.color);
+      const bad = items.filter(d => statKey(d) === "bad").length, warn = items.filter(d => statKey(d) === "warn").length;
+      sec.innerHTML = `<div class="sh"><span class="si">${catIcon(c.id)}</span><h2>${esc(catName(c.id))}</h2><em>${items.length}</em>` +
+        `<span class="sd">${bad ? `<span style="--sc:var(--bad)">${bad}</span>` : ""}${warn ? `<span style="--sc:var(--warn)">${warn}</span>` : ""}</span>` +
+        (items.length > GROUP_LIMIT ? `<button class="more">${esc(t("showAll", { n: items.length }))} ›</button>` : "") + `</div><div class="tiles"></div>`;
+      const grid = sec.querySelector(".tiles"); items.slice(0, GROUP_LIMIT).forEach(d => grid.appendChild(tileEl(d)));
+      const open = () => { fCat = c.id; render(); scrollTo({ top: 0 }); };
+      sec.querySelector(".sh").addEventListener("click", e => { if (!selecting && (e.target.closest(".more") || e.target.closest("h2"))) open(); });
+      box.appendChild(sec);
+    }
+  } else { box.className = "tiles"; for (const d of list) box.appendChild(tileEl(d)); }
   updateSelBar();
 }
 function toggleSel(id, row) { selected.has(id) ? selected.delete(id) : selected.add(id); row.classList.toggle("sel", selected.has(id)); updateSelBar(); }
