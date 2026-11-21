@@ -225,6 +225,23 @@ button.pill{width:40px;justify-content:center;padding:0}
 .pad button svg{width:30px;height:30px}
 .lkb{margin-top:22px;min-height:44px}
 .lkb button{color:var(--accent);font-size:16px;font-weight:600;min-height:44px;padding:0 14px}
+.banner{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--warn) 16%,var(--card));border-radius:16px;padding:10px 12px;margin:0 0 10px;font-size:14px;max-width:760px}
+.banner svg{width:22px;height:22px;color:var(--warn);flex:none}
+.banner span{flex:1;min-width:0}
+.banner button{color:var(--accent);font-weight:700;min-height:36px;padding:0 8px;white-space:nowrap}
+.banner button.x{color:var(--muted);font-size:20px;padding:0 6px}
+.rc{width:56px;height:72px;border-radius:10px;overflow:hidden;flex:none;background:var(--fill);border:1px solid var(--line);position:relative}
+.rc img{width:100%;height:100%;object-fit:cover}
+.rc.pdf{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)}
+.prow{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;cursor:pointer;position:relative;width:100%;text-align:left}
+.prow+.prow::before{content:"";position:absolute;left:54px;right:0;top:0;height:1px;background:var(--line)}
+.prow .pi{width:28px;height:28px;border-radius:50%;background:var(--sc);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.prow .pi svg{width:16px;height:16px}
+.prow .pt1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pt2{font-size:13px;color:var(--muted)}
+.prow>div{min-width:0;flex:1}
+.plsum{font-size:15px;margin:2px 4px 14px}
+.plsum b{font-variant-numeric:tabular-nums}
 .rowbtn{width:100%;text-align:left;color:var(--accent);font-size:17px;height:46px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(30,34,40,.94);color:#fff;border-radius:22px;padding:10px 18px;font-size:15px;z-index:60;max-width:88vw;text-align:center;animation:fade .2s}
 
@@ -253,7 +270,7 @@ button.pill{width:40px;justify-content:center;padding:0}
     <div class="nright">
       <button class="nbtn" id="bSelect" data-i="select">Select</button>
       <button class="nbtn" id="bShare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
-      <button class="nbtn" id="bPrint" aria-label="Print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6M7 18H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg></button>
+      <button class="nbtn" id="bTools" aria-label="Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/></svg></button>
       <button class="nbtn" id="bLang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
       <button class="nbtn" id="bSet" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M18.78 10.26 L21.49 10.56 L21.49 13.44 L18.78 13.74 L18.03 15.56 L19.73 17.69 L17.69 19.73 L15.56 18.03 L13.74 18.78 L13.44 21.49 L10.56 21.49 L10.26 18.78 L8.44 18.03 L6.31 19.73 L4.27 17.69 L5.97 15.56 L5.22 13.74 L2.51 13.44 L2.51 10.56 L5.22 10.26 L5.97 8.44 L4.27 6.31 L6.31 4.27 L8.44 5.97 L10.26 5.22 L10.56 2.51 L13.44 2.51 L13.74 5.22 L15.56 5.97 L17.69 4.27 L19.73 6.31 L18.03 8.44Z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
@@ -264,6 +281,7 @@ button.pill{width:40px;justify-content:center;padding:0}
   <h1 class="large" data-i="documents">Documents</h1>
   <div class="sub" id="sub"></div>
   <div class="stats" id="stats"></div>
+  <div class="banner" id="bk" hidden></div>
   <div class="toolbar">
     <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" data-iph="search" placeholder="Search" autocomplete="off"></div>
     <label class="pill" aria-label="Sort"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg><select id="sort"></select></label>
@@ -323,6 +341,10 @@ const TX = {
     backup: "Backup", exportBackup: "Export backup", importBackup: "Import backup", imported: "Imported {n} documents", importFail: "Could not read this backup file",
     backupNote: "A backup is one file with all documents and scans. Keep it in iCloud Drive or send it to yourself.",
     privacy: "Privacy", privacyText: "Everything is stored on this device only. Nothing is uploaded. Lock the app with a PIN and protect backups with a password. Google Drive sync is planned next.",
+    tools: "Tools", plannerTitle: "Contract", planOpen: "What will be valid on the contract?", planStart: "Boarding date", planMonths: "Contract (months)", planBuffer: "Reserve after (months)", planNeed: "Documents must be valid until {d}", planRenew: "Expires before boarding", planShort: "Expires during the contract", planOk: "Valid for the whole contract", planNone: "No expiry date", planShortBy: "{n} d short", planAllOk: "Everything is valid for the whole contract", planCount: "{n} to renew",
+    calAll: "Add expiry dates to Calendar", calNone: "No future expiry dates to add", icsSummary: "Expires: {n}", calDoc: "Add to Calendar", printList: "Print list or save as PDF",
+    detailsHd: "Details", f_cost: "Cost", f_provider: "Provider", f_link: "Link", f_tags: "Labels", tagsPh: "e.g. Norway contract", receipts: "Receipts and invoices", addReceipt: "Add receipt", receipt: "Receipt", removeRc: "Remove receipt", rcCost: "Amount read from the receipt. Check it.",
+    bkOld: "Last backup was {n} days ago", bkNever: "You have not made a backup yet", bkDo: "Back up", costsHd: "Costs", costsNone: "No costs entered yet", c_cost: "Cost",
     security: "Security", appLock: "App lock (PIN)", changePin: "Change PIN", lockNow: "Lock now", faceId: "Unlock with Face ID", enterPin: "Enter PIN", newPin: "Choose a 6-digit PIN", repeatPin: "Repeat the PIN", pinMismatch: "PINs do not match", wrongPin: "Wrong PIN", tryIn: "Try again in {n} s", currentPin: "Enter current PIN", pinOff: "App lock turned off", pinOn: "App lock turned on", faceFail: "Face ID is not available here", faceOn: "Face ID turned on",
     expEnc: "Encrypted (recommended)", expPlain: "Not encrypted", passTitle: "Backup password", passNew: "Choose a password of at least 10 characters. Without it the backup cannot be opened, and nobody can recover it.", passEnter: "Enter the password of this backup", passRepeat: "Repeat password", passField: "Password", passShort: "At least 10 characters", passDiff: "Passwords differ", passWrong: "Wrong password or damaged file", encrypting: "Encrypting…", lockNote: "The PIN stops other people from opening the app on this device. Backups are protected by their own password.",
     storage: "Storage", storageText: "{n} documents on this device",
@@ -350,6 +372,10 @@ const TX = {
     backup: "Kopia zapasowa", exportBackup: "Eksportuj kopię", importBackup: "Importuj kopię", imported: "Zaimportowano dokumentów: {n}", importFail: "Nie można odczytać tego pliku",
     backupNote: "Kopia to jeden plik ze wszystkimi dokumentami i skanami. Trzymaj go w iCloud Drive albo wyślij sobie.",
     privacy: "Prywatność", privacyText: "Wszystko jest zapisane tylko na tym urządzeniu. Nic nie jest wysyłane. Zablokuj aplikację kodem PIN i chroń kopie hasłem. Dysk Google jest w planach.",
+    tools: "Narzędzia", plannerTitle: "Kontrakt", planOpen: "Co będzie ważne na kontrakcie?", planStart: "Wejście na statek", planMonths: "Kontrakt (miesiące)", planBuffer: "Rezerwa po zejściu (miesiące)", planNeed: "Dokumenty muszą być ważne do {d}", planRenew: "Wygasa przed wejściem", planShort: "Wygasa w trakcie kontraktu", planOk: "Ważne przez cały kontrakt", planNone: "Brak daty ważności", planShortBy: "brakuje {n} dni", planAllOk: "Wszystko jest ważne przez cały kontrakt", planCount: "Do odnowienia: {n}",
+    calAll: "Dodaj terminy do Kalendarza", calNone: "Brak przyszłych terminów do dodania", icsSummary: "Wygasa: {n}", calDoc: "Dodaj do Kalendarza", printList: "Drukuj listę lub zapisz jako PDF",
+    detailsHd: "Szczegóły", f_cost: "Koszt", f_provider: "Organizator", f_link: "Link", f_tags: "Etykiety", tagsPh: "np. kontrakt Norwegia", receipts: "Rachunki i faktury", addReceipt: "Dodaj rachunek", receipt: "Rachunek", removeRc: "Usuń rachunek", rcCost: "Kwota odczytana z rachunku. Sprawdź ją.",
+    bkOld: "Ostatnia kopia sprzed {n} dni", bkNever: "Nie zrobiłeś jeszcze kopii zapasowej", bkDo: "Zrób kopię", costsHd: "Koszty", costsNone: "Nie wpisano jeszcze kosztów", c_cost: "Koszt",
     security: "Zabezpieczenia", appLock: "Blokada aplikacji (PIN)", changePin: "Zmień PIN", lockNow: "Zablokuj teraz", faceId: "Odblokowanie Face ID", enterPin: "Wpisz PIN", newPin: "Wybierz 6-cyfrowy PIN", repeatPin: "Powtórz PIN", pinMismatch: "PIN-y się różnią", wrongPin: "Błędny PIN", tryIn: "Spróbuj za {n} s", currentPin: "Wpisz obecny PIN", pinOff: "Blokada wyłączona", pinOn: "Blokada włączona", faceFail: "Face ID jest tu niedostępne", faceOn: "Face ID włączone",
     expEnc: "Szyfrowana (zalecane)", expPlain: "Bez szyfrowania", passTitle: "Hasło do kopii", passNew: "Wybierz hasło co najmniej 10-znakowe. Bez niego kopii nie otworzysz i nikt jej nie odzyska.", passEnter: "Wpisz hasło tej kopii", passRepeat: "Powtórz hasło", passField: "Hasło", passShort: "Co najmniej 10 znaków", passDiff: "Hasła się różnią", passWrong: "Błędne hasło lub uszkodzony plik", encrypting: "Szyfruję…", lockNote: "PIN chroni przed otwarciem aplikacji przez inne osoby na tym urządzeniu. Kopie mają własne hasło.",
     storage: "Pamięć", storageText: "Dokumentów na tym urządzeniu: {n}",
@@ -672,7 +698,7 @@ const thumbUrls = [];
 function visibleDocs() {
   const q = query.trim().toLowerCase();
   let r = docs.filter(d => (fCat === "all" || d.cat === fCat) && (fStat === "all" || statKey(d) === fStat) &&
-    (!q || [d.name, d.number, d.issuer, d.notes, catName(d.cat)].join(" ").toLowerCase().includes(q)));
+    (!q || [d.name, d.number, d.issuer, d.notes, d.provider, (d.tags || []).join(" "), catName(d.cat)].join(" ").toLowerCase().includes(q)));
   const cmpName = (a, b) => (a.name || "").localeCompare(b.name || "");
   const order = { flag: 0, stcw: 1, imca: 2, other: 3 };
   const sorters = {
@@ -787,7 +813,7 @@ function render() {
       box.appendChild(sec);
     }
   } else { box.className = "tiles"; for (const d of list) box.appendChild(tileEl(d)); }
-  updateSelBar();
+  updateSelBar(); updateBackupBanner();
 }
 function toggleSel(id, row) { selected.has(id) ? selected.delete(id) : selected.add(id); row.classList.toggle("sel", selected.has(id)); updateSelBar(); }
 function updateSelBar() { const n = selected.size, b = $("#selShare"); b.textContent = n ? t("shareN", { n }) : t("share"); b.disabled = n === 0; }
@@ -851,10 +877,12 @@ function addMenu() {
 }
 
 /* ---------- editor ---------- */
+const CURS = ["PLN", "EUR", "USD", "GBP", "NOK", "DKK", "SEK"];
 const SVG = {
   rot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9h8M8 12.5h8M8 16h5"/></svg>',
   image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/></svg>'
@@ -864,9 +892,10 @@ async function openEditor(doc, startFiles = []) {
   const isNew = !doc;
   const ed = {
     id: doc ? doc.id : uid(), created: doc ? doc.created : Date.now(), cur: 0, busy: false, dirty: isNew, catTouched: !isNew,
+    receipts: ((doc && doc.receipts) || []).map(r => ({ blob: r.blob, type: r.type, thumb: r.thumb, url: URL.createObjectURL(r.blob) })),
     pages: (doc ? doc.pages : []).map(p => ({ blob: p.blob, type: p.type, thumb: p.thumb, url: URL.createObjectURL(p.blob) }))
   };
-  const free = () => ed.pages.forEach(p => { if (p.url) URL.revokeObjectURL(p.url); });
+  const free = () => { ed.pages.concat(ed.receipts).forEach(p => { if (p.url) URL.revokeObjectURL(p.url); }); };
   const doClose = () => { free(); sh.close(); };
   const tryClose = () => { if (ed.dirty) confirmSheet(t("discard"), t("discardYes"), doClose, t("keep")); else doClose(); };
 
@@ -884,19 +913,68 @@ async function openEditor(doc, startFiles = []) {
         `<div class="f"><label id="lNoExp">${esc(t("f_noexp"))}</label><div class="sw"><button class="toggle" id="eNoExp" role="switch" aria-checked="false" aria-labelledby="lNoExp"></button></div></div>` +
         `<div class="f"><label for="eBy">${esc(t("f_issuer"))}</label><input id="eBy" type="text" placeholder="${esc(t("optional"))}" autocomplete="off"></div>` +
         `<div class="f area"><label for="eNotes" style="width:auto">${esc(t("f_notes"))}</label><textarea id="eNotes" rows="3" placeholder="${esc(t("notesPh"))}"></textarea></div>` +
-        `</div><div class="btnrow" id="edBtns"></div>`;
+        `</div>` +
+        `<div class="hd">${esc(t("detailsHd"))}</div><div class="form">` +
+        `<div class="f"><label for="eCost">${esc(t("f_cost"))}</label><input id="eCost" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off"><select id="eCur" style="flex:none;width:auto;margin-left:6px">${CURS.map(c => `<option>${c}</option>`).join("")}</select></div>` +
+        `<div class="f"><label for="eProv">${esc(t("f_provider"))}</label><input id="eProv" type="text" placeholder="${esc(t("optional"))}" autocomplete="off"></div>` +
+        `<div class="f"><label for="eLink">${esc(t("f_link"))}</label><input id="eLink" type="text" inputmode="url" autocapitalize="none" autocorrect="off" placeholder="https://" autocomplete="off"></div>` +
+        `<div class="f"><label for="eTags">${esc(t("f_tags"))}</label><input id="eTags" type="text" placeholder="${esc(t("tagsPh"))}" autocomplete="off"></div></div>` +
+        `<div class="hd">${esc(t("receipts"))}</div><div class="strip" id="edRc"></div><div class="note" id="rcNote" hidden></div>` +
+        `<div class="btnrow" id="edBtns"></div>`;
     }
   });
   const q = s => sh.body.querySelector(s);
   if (doc) {
     q("#eName").value = doc.name || ""; q("#eCat").value = doc.cat || "other"; q("#eNum").value = doc.number || ""; q("#eIss").value = doc.issued || "";
     q("#eExp").value = doc.expiry || ""; q("#eBy").value = doc.issuer || ""; q("#eNotes").value = doc.notes || "";
+    q("#eCost").value = doc.cost == null ? "" : String(doc.cost).replace(".", ","); q("#eCur").value = doc.currency || q("#eCur").value; q("#eProv").value = doc.provider || ""; q("#eLink").value = doc.link || ""; q("#eTags").value = (doc.tags || []).join(", ");
     if (doc.noExpiry) { q("#eNoExp").setAttribute("aria-checked", "true"); q("#eExp").disabled = true; }
   } else q("#eCat").value = "other";
   sh.body.addEventListener("input", e => { ed.dirty = true; const f = e.target.closest && e.target.closest(".f"); if (f) f.removeAttribute("data-auto"); });
   q("#eName").addEventListener("input", e => { if (!ed.catTouched) q("#eCat").value = suggestCat(e.target.value); });
   q("#eCat").addEventListener("change", () => { ed.catTouched = true; });
+  q("#eCur").value = lsGet("crewvault.cur") || (getLang() === "pl" ? "PLN" : "EUR");
+  if (doc && doc.currency) q("#eCur").value = doc.currency;
   const ocrBox = q("#edOcr");
+  /* receipts: scanned like pages, kept apart from the certificate itself */
+  const rcBox = q("#edRc"), rcNote = q("#rcNote");
+  function drawReceipts() {
+    rcBox.innerHTML = "";
+    ed.receipts.forEach((r, i) => {
+      const b = document.createElement("button"); b.className = "rc" + (r.thumb ? "" : " pdf"); b.setAttribute("aria-label", t("receipt") + " " + (i + 1));
+      b.innerHTML = r.thumb ? `<img alt="" src="${r.thumb}">` : "PDF"; b.onclick = () => openReceipt(i); rcBox.appendChild(b);
+    });
+    const add = document.createElement("button"); add.className = "addp"; add.style.height = "72px"; add.style.width = "56px"; add.setAttribute("aria-label", t("addReceipt")); add.innerHTML = SVG.plus;
+    add.onclick = () => actionSheet([{ icon: ICON_CAM, text: t("takePhoto"), fn: async () => addReceiptFiles(await pick("cam")) }, { icon: ICON_IMG, text: t("chooseFile"), fn: async () => addReceiptFiles(await pick("file")) }]);
+    rcBox.appendChild(add);
+  }
+  function openReceipt(i) {
+    const r = ed.receipts[i]; if (!r) return;
+    const rs = openSheet({ title: t("receipt") + " " + (i + 1), right: { text: t("done"), bold: true, fn: () => rs.close() }, body: api => {
+      api.body.innerHTML = `<div class="pv">${r.type === "application/pdf" ? `<div class="ph">${esc(t("pdfFile"))}</div>` : `<img alt="" src="${r.url}">`}</div><div style="height:12px"></div>`;
+      const del = document.createElement("button"); del.className = "big danger"; del.innerHTML = SVG.trash + esc(t("removeRc"));
+      del.onclick = () => { if (r.url) URL.revokeObjectURL(r.url); ed.receipts.splice(i, 1); ed.dirty = true; rs.close(); drawReceipts(); }; api.body.appendChild(del);
+    } });
+  }
+  async function addReceiptFiles(files) {
+    if (!files.length) return; ed.dirty = true; const fresh = [];
+    for (const f of files) {
+      try {
+        const pp = (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) ? await loadPdfPages(f) : [{ origBlob: f, mode: "color", rot: 0 }];
+        for (const p of pp) { await renderPage(p); ed.receipts.push({ blob: p.blob, type: p.type, thumb: p.thumb, url: p.url }); fresh.push(p); }
+      } catch (e) { console.error(e); }
+    }
+    drawReceipts();
+    if (fresh.length && ocrEnabled() && !q("#eCost").value) {
+      rcNote.hidden = false; rcNote.textContent = t("ocrReading");
+      try {
+        const r = parseReceipt(await readText(fresh.slice(0, 2)));
+        if (r.amount) { q("#eCost").value = r.amount.toFixed(2).replace(".", getLang() === "pl" ? "," : "."); q("#eCost").closest(".f").setAttribute("data-auto", "1"); if (r.currency) q("#eCur").value = r.currency; rcNote.textContent = t("rcCost"); }
+        else rcNote.hidden = true;
+      } catch (e) { rcNote.hidden = true; }
+    }
+  }
+  drawReceipts();
   function applyOcr(r) {
     const set = (sel, val) => { const el = q(sel); if (!val) return; if (el.value && !el.closest(".f").hasAttribute("data-auto")) return; el.value = val; el.closest(".f").setAttribute("data-auto", "1"); };
     set("#eName", r.name); set("#eNum", r.number); set("#eIss", r.issued); set("#eBy", r.issuer);
@@ -958,6 +1036,9 @@ async function openEditor(doc, startFiles = []) {
     if (p) { const rm = document.createElement("button"); rm.className = "big danger"; rm.innerHTML = SVG.trash + esc(t("removePage"));
       rm.onclick = () => { if (p.url) URL.revokeObjectURL(p.url); ed.pages.splice(ed.cur, 1); ed.cur = Math.max(0, ed.cur - 1); ed.dirty = true; drawPages(); }; btns.appendChild(rm); }
     if (p && p.type === "application/pdf") { const op = document.createElement("button"); op.className = "big"; op.textContent = t("openPdf"); op.onclick = () => window.open(p.url, "_blank"); btns.appendChild(op); }
+    if (!isNew && doc.expiry && !doc.noExpiry && daysLeft(doc.expiry) >= 0) {
+      const cb = document.createElement("button"); cb.className = "big"; cb.innerHTML = SVG.cal + esc(t("calDoc")); cb.onclick = () => exportCalendar([doc.id]); btns.appendChild(cb);
+    }
     if (!isNew) {
       const shb = document.createElement("button"); shb.className = "big"; shb.innerHTML = SVG.share + esc(t("share")); shb.onclick = () => shareDocs([doc.id]); btns.appendChild(shb);
       const del = document.createElement("button"); del.className = "big danger"; del.innerHTML = SVG.trash + esc(t("delete"));
@@ -989,8 +1070,12 @@ async function openEditor(doc, startFiles = []) {
     const out = {
       id: ed.id, created: ed.created, updated: Date.now(), name, cat: q("#eCat").value, number: q("#eNum").value.trim(), issued: q("#eIss").value,
       expiry: noExp ? "" : q("#eExp").value, noExpiry: noExp, issuer: q("#eBy").value.trim(), notes: q("#eNotes").value.trim(),
-      pages: ed.pages.map(p => ({ blob: p.blob, type: p.type, thumb: p.thumb || null })), thumb: (ed.pages[0] && ed.pages[0].thumb) || null
+      pages: ed.pages.map(p => ({ blob: p.blob, type: p.type, thumb: p.thumb || null })), thumb: (ed.pages[0] && ed.pages[0].thumb) || null,
+      cost: (() => { const v = parseFloat(q("#eCost").value.replace(/\s/g, "").replace(",", ".")); return isFinite(v) ? v : null; })(), currency: q("#eCur").value,
+      provider: q("#eProv").value.trim(), link: q("#eLink").value.trim(), tags: q("#eTags").value.split(",").map(x => x.trim()).filter(Boolean),
+      receipts: ed.receipts.map(r => ({ blob: r.blob, type: r.type, thumb: r.thumb || null }))
     };
+    lsSet("crewvault.cur", out.currency); if (!lsGet("crewvault.firstDoc")) lsSet("crewvault.firstDoc", String(Date.now()));
     await dbPut(out);
     const i = docs.findIndex(d => d.id === out.id); if (i >= 0) docs[i] = out; else docs.push(out);
     doClose(); render(); toast(t("saved"));
@@ -1049,12 +1134,97 @@ async function shareFiles(files, title) {
 }
 const shareDocs = async ids => shareFiles(await filesOf(ids), "CrewVault");
 
+/* ---------- receipts: read the total from a scanned receipt ---------- */
+async function readText(pages) {
+  const w = await getOcrWorker(); await w.setParameters({ tessedit_pageseg_mode: "3" }); const out = [];
+  for (const p of pages) { await ensureSrc(p); const cv = pageCanvas(p, "gray"); releaseSrc(p); out.push((await w.recognize(cv)).data.text); }
+  return out.join("\n\n");
+}
+function parseReceipt(raw) {
+  const text = String(raw || ""), lines = text.split("\n").map(l => l.trim()).filter(Boolean), res = {};
+  const cur = /\b(PLN|zł|zl)\b/i.test(text) ? "PLN" : /€|\bEUR\b/i.test(text) ? "EUR" : /\bUSD\b|\$/.test(text) ? "USD" : /£|\bGBP\b/i.test(text) ? "GBP" : /\bNOK\b/.test(text) ? "NOK" : /\bDKK\b/.test(text) ? "DKK" : /\bSEK\b/.test(text) ? "SEK" : null;
+  const KW = /total|razem|suma|do zap[łl]aty|amount due|brutto|należno|to pay|\bsum\b/i, NUM = /(\d{1,3}(?:[ .]\d{3})*[,.]\d{2}|\d+[,.]\d{2})(?!\d)/g;
+  const toNum = x => { x = x.replace(/\s/g, ""); const m = x.match(/^(.*)[,.](\d{2})$/); return m ? parseFloat(m[1].replace(/[.,]/g, "") + "." + m[2]) : NaN; };
+  const cands = [];
+  lines.forEach((l, i) => { if (!KW.test(l)) return; for (const src of [l, lines[i + 1] || ""]) { let m; NUM.lastIndex = 0; let found = false; while ((m = NUM.exec(src))) { const v = toNum(m[1]); if (v > 0 && v < 1e6) { cands.push(v); found = true; } } if (found) break; } });
+  if (cands.length) res.amount = Math.max(...cands);
+  if (cur) res.currency = cur;
+  return res;
+}
+const fmtMoney = (v, c) => { try { return new Intl.NumberFormat(getLang() === "pl" ? "pl-PL" : "en-GB", { style: "currency", currency: c || "PLN" }).format(v); } catch (e) { return v + " " + (c || ""); } };
+
+/* ---------- calendar (.ics with reminders 90, 60 and 30 days before) ---------- */
+const icsEsc = x => String(x || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+const icsFold = line => { const out = []; while (line.length > 73) { out.push(line.slice(0, 73)); line = " " + line.slice(73); } out.push(line); return out.join("\r\n"); };
+function buildIcs(list) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, ""), L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//CrewVault//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  for (const d of list) {
+    const nx = new Date(d.expiry + "T00:00:00"); nx.setDate(nx.getDate() + 1);
+    L.push("BEGIN:VEVENT", "UID:cv-" + d.id + "@crewvault", "DTSTAMP:" + stamp, "DTSTART;VALUE=DATE:" + d.expiry.replace(/-/g, ""), "DTEND;VALUE=DATE:" + nx.getFullYear() + pad2(nx.getMonth() + 1) + pad2(nx.getDate()),
+      "SUMMARY:" + icsEsc(t("icsSummary", { n: d.name })), "DESCRIPTION:" + icsEsc([d.number ? "№ " + d.number : "", d.issuer, catName(d.cat)].filter(Boolean).join(" · ")), "TRANSP:TRANSPARENT");
+    for (const [n, trig] of [[90, "-P89DT15H"], [60, "-P59DT15H"], [30, "-P29DT15H"]]) L.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEsc(t("icsSummary", { n: d.name }) + " (" + n + " d)"), "TRIGGER:" + trig, "END:VALARM");
+    L.push("END:VEVENT");
+  }
+  L.push("END:VCALENDAR"); return L.map(icsFold).join("\r\n") + "\r\n";
+}
+async function exportCalendar(ids) {
+  const list = (ids ? ids.map(id => docs.find(d => d.id === id)).filter(Boolean) : docs).filter(d => d.expiry && !d.noExpiry && daysLeft(d.expiry) >= 0);
+  if (!list.length) { toast(t("calNone")); return; }
+  await shareFiles([new File([buildIcs(list)], "CrewVault-" + (ids && ids.length === 1 ? slug(list[0].name) : "terminy") + ".ics", { type: "text/calendar" })], "CrewVault");
+}
+
+/* ---------- contract check: what is still valid on the day of boarding and at the end of the contract ---------- */
+const addMonthsIso = (iso, m) => { const d = new Date(iso + "T00:00:00"), day = d.getDate(); d.setMonth(d.getMonth() + m); if (d.getDate() !== day) d.setDate(0); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); };
+function openPlanner() {
+  let cfg; try { cfg = JSON.parse(lsGet("crewvault.contract")); } catch (e) {} cfg = cfg || {};
+  cfg.start = cfg.start || addMonthsIso(today0().getFullYear() + "-" + pad2(today0().getMonth() + 1) + "-" + pad2(today0().getDate()), 1); cfg.months = cfg.months || 4; cfg.buffer = cfg.buffer == null ? 0 : cfg.buffer;
+  const sh = openSheet({ title: t("plannerTitle"), right: { text: t("done"), bold: true, fn: () => sh.close() }, body: api => {
+    api.body.innerHTML = `<div class="form"><div class="f"><label for="pStart" style="width:auto;flex:1">${esc(t("planStart"))}</label><input id="pStart" type="date"></div><div class="f"><label for="pMon" style="width:auto;flex:1">${esc(t("planMonths"))}</label><input id="pMon" type="text" inputmode="numeric"></div><div class="f"><label for="pBuf" style="width:auto;flex:1">${esc(t("planBuffer"))}</label><input id="pBuf" type="text" inputmode="numeric"></div></div><div id="pOut"></div>`;
+    const $$ = x => api.body.querySelector(x); $$("#pStart").value = cfg.start; $$("#pMon").value = cfg.months; $$("#pBuf").value = cfg.buffer;
+    const calc = () => {
+      cfg.start = $$("#pStart").value || cfg.start; cfg.months = Math.max(0, parseInt($$("#pMon").value, 10) || 0); cfg.buffer = Math.max(0, parseInt($$("#pBuf").value, 10) || 0); lsSet("crewvault.contract", JSON.stringify(cfg));
+      const need = addMonthsIso(cfg.start, cfg.months + cfg.buffer), G = { renew: [], short: [], ok: [], none: [] };
+      for (const d of docs) {
+        if (d.noExpiry) G.ok.push(d); else if (!d.expiry) G.none.push(d); else if (d.expiry < cfg.start) G.renew.push(d); else if (d.expiry < need) G.short.push(d); else G.ok.push(d);
+      }
+      const byExp = (a, b) => (a.expiry || "9").localeCompare(b.expiry || "9"); Object.values(G).forEach(a => a.sort(byExp));
+      const bad = G.renew.length + G.short.length, out = $$("#pOut");
+      out.innerHTML = `<div class="plsum">${esc(t("planNeed", { d: fmtDate(need) }))}. <b>${esc(bad ? t("planCount", { n: bad }) : t("planAllOk"))}</b></div>`;
+      const block = (list, title, cls, icon, sub) => {
+        if (!list.length) return; const h = document.createElement("div"); h.className = "hd"; h.textContent = title + " · " + list.length; out.appendChild(h);
+        const g = document.createElement("div"); g.className = "form";
+        list.forEach(d => { const r = document.createElement("button"); r.className = "prow"; r.style.setProperty("--sc", `var(--${cls})`);
+          r.innerHTML = `<span class="pi">${icon}</span><div><div class="pt1">${esc(d.name)}</div><div class="pt2">${esc(sub(d))}</div></div>`;
+          r.onclick = () => { sh.close(); openEditor(d); }; g.appendChild(r); });
+        out.appendChild(g);
+      };
+      block(G.renew, t("planRenew"), "bad", ST_ICON.bad.replace("<svg", '<svg style="color:#fff"'), d => (d.name && fmtDate(d.expiry)));
+      block(G.short, t("planShort"), "warn", ST_ICON.warn, d => fmtDate(d.expiry) + " · " + t("planShortBy", { n: Math.round((new Date(need + "T00:00:00") - new Date(d.expiry + "T00:00:00")) / MS_DAY) }));
+      block(G.none, t("planNone"), "none", ST_ICON.none, () => "");
+      block(G.ok, t("planOk"), "ok", ST_ICON.ok, d => d.noExpiry ? t("noExpL") : fmtDate(d.expiry));
+    };
+    ["#pStart", "#pMon", "#pBuf"].forEach(x => $$(x).addEventListener("input", calc)); calc();
+  } });
+}
+function toolsMenu() {
+  actionSheet([{ icon: ST_ICON.ok, text: t("planOpen"), fn: openPlanner }, { icon: SVG.cal, text: t("calAll"), fn: () => exportCalendar() }, { icon: SVG.share, text: t("printList"), fn: printList }]);
+}
+/* ---------- backup reminder ---------- */
+function updateBackupBanner() {
+  const bk = $("#bk"), now = Date.now(), last = +(lsGet("crewvault.lastBackup") || 0), first = +(lsGet("crewvault.firstDoc") || 0), snooze = +(lsGet("crewvault.bkSnooze") || 0);
+  let msg = "";
+  if (docs.length && snooze < now) { if (last) { const n = Math.floor((now - last) / MS_DAY); if (n >= 30) msg = t("bkOld", { n }); } else if (first && now - first > 7 * MS_DAY) msg = t("bkNever"); }
+  bk.hidden = !msg; if (!msg) return;
+  bk.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span>${esc(msg)}</span><button id="bkDo">${esc(t("bkDo"))}</button><button class="x" id="bkX" aria-label="Close">×</button>`;
+  bk.querySelector("#bkDo").onclick = () => exportBackup(); bk.querySelector("#bkX").onclick = () => { lsSet("crewvault.bkSnooze", String(Date.now() + 7 * MS_DAY)); updateBackupBanner(); };
+}
+
 /* ---------- print / PDF list ---------- */
 function printList() {
   const list = visibleDocs(), pa = $("#printArea");
   pa.innerHTML = `<h1>${esc(t("printTitle"))}</h1><p class="sub">${esc(t("printed"))}: ${esc(new Date().toLocaleDateString(getLang() === "pl" ? "pl-PL" : "en-GB", { day: "2-digit", month: "long", year: "numeric" }))} · ${list.length}</p>` +
-    `<table><thead><tr><th>${esc(t("c_cat"))}</th><th>${esc(t("c_doc"))}</th><th>${esc(t("c_no"))}</th><th>${esc(t("c_issued"))}</th><th>${esc(t("c_exp"))}</th><th>${esc(t("c_by"))}</th><th>${esc(t("c_status"))}</th></tr></thead><tbody>` +
-    list.map(d => { const st = status(d); return `<tr><td>${esc(catName(d.cat))}</td><td>${esc(d.name)}</td><td>${esc(d.number)}</td><td>${esc(fmtDate(d.issued))}</td><td>${d.noExpiry ? "—" : esc(fmtDate(d.expiry))}</td><td>${esc(d.issuer)}</td><td class="${st.cls === "bad" ? "bad" : st.cls === "warn" ? "warn" : ""}">${esc(st.txt)}</td></tr>`; }).join("") +
+    `<table><thead><tr><th>${esc(t("c_cat"))}</th><th>${esc(t("c_doc"))}</th><th>${esc(t("c_no"))}</th><th>${esc(t("c_issued"))}</th><th>${esc(t("c_exp"))}</th><th>${esc(t("c_by"))}</th><th>${esc(t("c_cost"))}</th><th>${esc(t("c_status"))}</th></tr></thead><tbody>` +
+    list.map(d => { const st = status(d); return `<tr><td>${esc(catName(d.cat))}</td><td>${esc(d.name)}</td><td>${esc(d.number)}</td><td>${esc(fmtDate(d.issued))}</td><td>${d.noExpiry ? "—" : esc(fmtDate(d.expiry))}</td><td>${esc(d.issuer)}</td><td>${d.cost != null ? esc(fmtMoney(d.cost, d.currency)) : ""}</td><td class="${st.cls === "bad" ? "bad" : st.cls === "warn" ? "warn" : ""}">${esc(st.txt)}</td></tr>`; }).join("") +
     `</tbody></table>`;
   setTimeout(() => window.print(), 50);
 }
@@ -1175,9 +1345,10 @@ function exportBackup() { actionSheet([{ text: t("expEnc"), fn: () => doExport(t
 async function doExport(enc) {
   let pass = null; if (enc) { pass = await askPassword(true); if (!pass) return; toast(t("encrypting")); }
   const items = [];
-  for (const d of docs) items.push({ ...d, pages: await Promise.all(d.pages.map(async p => ({ type: p.type, thumb: p.thumb, data: await blobToData(p.blob) }))) });
+  for (const d of docs) items.push({ ...d, pages: await Promise.all(d.pages.map(async p => ({ type: p.type, thumb: p.thumb, data: await blobToData(p.blob) }))), receipts: await Promise.all((d.receipts || []).map(async p => ({ type: p.type, thumb: p.thumb, data: await blobToData(p.blob) }))) });
   const plain = JSON.stringify({ app: "crewvault", v: 1, docs: items });
   const body = enc ? JSON.stringify({ app: "crewvault", v: 2, enc: await encryptText(plain, pass) }) : plain;
+  lsSet("crewvault.lastBackup", String(Date.now()));
   const file = new File([body], "CrewVault-backup-" + new Date().toISOString().slice(0, 10) + (enc ? ".encrypted" : "") + ".json", { type: "application/json" });
   await shareFiles([file], "CrewVault backup");
 }
@@ -1191,7 +1362,8 @@ async function importBackup(file) {
     if (j.app !== "crewvault" || !Array.isArray(j.docs)) throw 0;
     for (const d of j.docs) {
       const pages = await Promise.all(d.pages.map(async p => ({ type: p.type, thumb: p.thumb, blob: await (await fetch(p.data)).blob() })));
-      const doc = { ...d, pages }; await dbPut(doc); const i = docs.findIndex(x => x.id === doc.id); if (i >= 0) docs[i] = doc; else docs.push(doc);
+      const receipts = await Promise.all((d.receipts || []).map(async p => ({ type: p.type, thumb: p.thumb, blob: await (await fetch(p.data)).blob() })));
+      const doc = { ...d, pages, receipts }; await dbPut(doc); const i = docs.findIndex(x => x.id === doc.id); if (i >= 0) docs[i] = doc; else docs.push(doc);
     }
     render(); toast(t("imported", { n: j.docs.length }));
   } catch (e) { toast(t("importFail")); }
@@ -1205,6 +1377,7 @@ function openSettings() {
       `</div><div class="note" style="margin-top:-8px">${esc(t("lockNote"))}</div>` +
       `<div class="hd">${esc(t("backup"))}</div><div class="btnrow"><button class="big" id="sExp">${esc(t("exportBackup"))}</button><button class="big" id="sImp">${esc(t("importBackup"))}</button></div><div class="note">${esc(t("backupNote"))}</div>` +
       `<div class="hd">${esc(t("privacy"))}</div><div class="note" style="margin-top:0">${esc(t("privacyText"))}</div>` +
+      `<div class="hd">${esc(t("costsHd"))}</div><div class="note" style="margin-top:0">${esc((() => { const tot = {}; docs.forEach(d => { if (d.cost != null) tot[d.currency || "PLN"] = (tot[d.currency || "PLN"] || 0) + d.cost; }); const k = Object.keys(tot); return k.length ? k.map(c => fmtMoney(tot[c], c)).join(" · ") : t("costsNone"); })())}</div>` +
       `<div class="hd">${esc(t("storage"))}</div><div class="note" style="margin-top:0">${esc(t("storageText", { n: docs.length }))}</div>`;
     const reopen = () => { sh.close(); openSettings(); };
     api.body.querySelector("#sPin").onclick = async () => {
@@ -1248,7 +1421,7 @@ $("#sort").addEventListener("change", e => { sortBy = e.target.value; lsSet("cre
 $("#bSelect").onclick = () => { selecting = !selecting; selected.clear(); render(); };
 $("#selAll").onclick = () => { const l = visibleDocs(); if (selected.size === l.length) selected.clear(); else l.forEach(d => selected.add(d.id)); render(); };
 $("#selShare").onclick = () => shareDocs([...selected]);
-$("#bPrint").onclick = printList;
+$("#bTools").onclick = toolsMenu;
 $("#bShare").onclick = shareMenu;
 $("#bLang").onclick = langMenu;
 $("#bSet").onclick = openSettings;
