@@ -251,6 +251,7 @@ const TX = {
     sort: "Sort", all: "All", cat_flag: "Flag", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Other",
     sort_expiry: "Expiry date", sort_name: "Name", sort_cat: "Category", sort_issuer: "Issued by", sort_issued: "Issue date",
     emptyTitle: "No documents yet", emptyText: "Tap + to scan your first certificate.", noMatch: "Nothing matches",
+    pageLimit: "Only the first {n} pages were added", moveLeft: "Move page earlier", moveRight: "Move page later", pages: "{n} pages",
     ocrReading: "Reading the document…", ocrDone: "Details read from the scan. Check the fields marked ✦.", ocrNone: "No details found. Rotate the scan or enter them by hand.", ocrAgain: "Read details", ocrSetting: "Read details from scans", ocrNote: "Recognition runs on this device. Nothing is uploaded.", ocrFail: "Reading is not available here",
     selAll: "Select all", shareAllN: "Share all ({n})", shareShown: "Share shown ({n})", selectDocs: "Select documents…", share: "Share", shareN: "Share ({n})", shareAll: "Share all", print: "Print",
     add: "Add document", takePhoto: "Take photo", chooseFile: "Choose photo or PDF", manual: "Enter details only",
@@ -273,6 +274,7 @@ const TX = {
     sort: "Sortuj", all: "Wszystko", cat_flag: "Bandera", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Inne",
     sort_expiry: "Data ważności", sort_name: "Nazwa", sort_cat: "Kategoria", sort_issuer: "Wystawca", sort_issued: "Data wydania",
     emptyTitle: "Brak dokumentów", emptyText: "Dotknij +, aby zeskanować pierwszy certyfikat.", noMatch: "Brak wyników",
+    pageLimit: "Dodano tylko pierwsze strony: {n}", moveLeft: "Przesuń stronę wcześniej", moveRight: "Przesuń stronę później", pages: "Stron: {n}",
     ocrReading: "Odczytuję dokument…", ocrDone: "Dane odczytane ze skanu. Sprawdź pola oznaczone ✦.", ocrNone: "Nie znaleziono danych. Obróć skan lub wpisz je ręcznie.", ocrAgain: "Odczytaj dane", ocrSetting: "Odczyt danych ze skanów", ocrNote: "Rozpoznawanie działa na tym urządzeniu. Nic nie jest wysyłane.", ocrFail: "Odczyt nie jest tu dostępny",
     selAll: "Zaznacz wszystko", shareAllN: "Udostępnij wszystkie ({n})", shareShown: "Udostępnij widoczne ({n})", selectDocs: "Wybierz dokumenty…", share: "Udostępnij", shareN: "Udostępnij ({n})", shareAll: "Udostępnij wszystkie", print: "Drukuj",
     add: "Dodaj dokument", takePhoto: "Zrób zdjęcie", chooseFile: "Wybierz zdjęcie lub PDF", manual: "Wpisz tylko dane",
@@ -356,7 +358,7 @@ async function dbDel(id) {
 }
 
 /* ---------- scan processing ---------- */
-const MAXD = 2200;
+const MAXD = 2200, MAX_PDF_PAGES = 40;
 async function loadImage(file) {
   try { return await createImageBitmap(file, { imageOrientation: "from-image" }); }
   catch (e) {
@@ -400,6 +402,8 @@ function thumbOf(cv) {
   c.getContext("2d").drawImage(cv, 0, 0, c.width, c.height);
   return c.toDataURL("image/jpeg", 0.7);
 }
+async function ensureSrc(p) { if (!p.src && p.origBlob) p.src = await loadImage(p.origBlob); }
+function releaseSrc(p) { if (p.src && p.src.close) p.src.close(); p.src = null; }
 function pageCanvas(p, mode) {
   const sw = p.src.naturalWidth || p.src.width, sh = p.src.naturalHeight || p.src.height, k = Math.min(1, MAXD / Math.max(sw, sh));
   const w = Math.round(sw * k), h = Math.round(sh * k), rot = p.rot % 360, swap = rot === 90 || rot === 270;
@@ -412,7 +416,8 @@ function pageCanvas(p, mode) {
   return cv;
 }
 async function renderPage(p) {
-  const cv = pageCanvas(p, p.mode);
+  await ensureSrc(p);
+  const cv = pageCanvas(p, p.mode); releaseSrc(p);
   p.blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.86));
   p.type = "image/jpeg"; p.thumb = thumbOf(cv);
   if (p.url) URL.revokeObjectURL(p.url);
@@ -560,7 +565,8 @@ async function readScan(pages, onProgress) {
     const out = [];
     for (let i = 0; i < n; i++) {
       ocrProgress = f => onProgress && onProgress(base + span * (i + f) / n);
-      out.push((await w.recognize(pageCanvas(pages[i], "gray"))).data.text);
+      await ensureSrc(pages[i]); const cv = pageCanvas(pages[i], "gray"); releaseSrc(pages[i]);
+      out.push((await w.recognize(cv)).data.text);
     }
     return out.join("\n\n");
   };
@@ -582,12 +588,14 @@ async function loadPdfPages(file) {
   if (!window.pdfjsLib) await loadScript(new URL("ocr/pdf.min.js", document.baseURI).href);
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("ocr/pdf.worker.min.js", document.baseURI).href;
   const doc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise, out = [];
-  for (let i = 1; i <= Math.min(doc.numPages, 8); i++) {
+  out.total = doc.numPages;
+  for (let i = 1; i <= Math.min(doc.numPages, MAX_PDF_PAGES); i++) {
     const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 }), sc = Math.min(4, MAXD / Math.max(v0.width, v0.height)), vp = pg.getViewport({ scale: sc });
     const cv = document.createElement("canvas"); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
     const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
     await pg.render({ canvasContext: ctx, viewport: vp }).promise;
-    out.push({ src: cv, mode: "color", rot: 0 });
+    out.push({ origBlob: await new Promise(r => cv.toBlob(r, "image/jpeg", 0.92)), mode: "color", rot: 0 });
+    cv.width = cv.height = 1;
   }
   return out;
 }
@@ -784,7 +792,7 @@ async function openEditor(doc, startFiles = []) {
     ed.dirty = true;
   }
   async function runOcr() {
-    const list = ed.pages.filter(pg => pg.src).slice(0, 4);
+    const list = ed.pages.filter(pg => pg.origBlob).slice(0, 4);
     if (!list.length || ed.reading) return;
     ed.reading = true; ocrBox.hidden = false;
     ocrBox.innerHTML = `<div>${esc(t("ocrReading"))}</div><div class="bar"><i></i></div>`;
@@ -811,8 +819,9 @@ async function openEditor(doc, startFiles = []) {
     const add = document.createElement("button"); add.className = "addp"; add.setAttribute("aria-label", t("addPage")); add.innerHTML = SVG.plus;
     add.onclick = () => actionSheet([{ icon: ICON_CAM, text: t("takePhoto"), fn: async () => addFiles(await pick("cam")) }, { icon: ICON_IMG, text: t("chooseFile"), fn: async () => addFiles(await pick("file")) }]);
     strip.appendChild(add);
-    ctrl.innerHTML = ""; ctrl.hidden = !(p && p.src);
-    if (p && p.src) {
+    if (ed.pages.length > 1) { const c = document.createElement("span"); c.style.cssText = "color:var(--muted);font-size:13px;white-space:nowrap;padding-left:6px"; c.textContent = t("pages", { n: ed.pages.length }); strip.appendChild(c); }
+    ctrl.innerHTML = ""; ctrl.hidden = !(p && p.origBlob);
+    if (p && p.origBlob) {
       const seg = document.createElement("div"); seg.className = "seg";
       [["color", "m_color"], ["gray", "m_gray"], ["bw", "m_bw"], ["orig", "m_orig"]].forEach(([m, k]) => {
         const b = document.createElement("button"); b.textContent = t(k); b.setAttribute("aria-pressed", String(p.mode === m));
@@ -825,6 +834,13 @@ async function openEditor(doc, startFiles = []) {
       ctrl.append(seg, rot, rd);
     }
     const btns = q("#edBtns"); btns.innerHTML = "";
+    if (ed.pages.length > 1) for (const dir of [-1, 1]) {
+      const mv = document.createElement("button"); mv.className = "ibtn"; mv.style.height = "48px"; mv.setAttribute("aria-label", t(dir < 0 ? "moveLeft" : "moveRight"));
+      mv.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="' + (dir < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7") + '"/></svg>';
+      mv.disabled = ed.cur + dir < 0 || ed.cur + dir >= ed.pages.length; mv.style.opacity = mv.disabled ? ".35" : "1";
+      mv.onclick = () => { const j = ed.cur + dir; [ed.pages[ed.cur], ed.pages[j]] = [ed.pages[j], ed.pages[ed.cur]]; ed.cur = j; ed.dirty = true; drawPages(); };
+      btns.appendChild(mv);
+    }
     if (p) { const rm = document.createElement("button"); rm.className = "big danger"; rm.innerHTML = SVG.trash + esc(t("removePage"));
       rm.onclick = () => { if (p.url) URL.revokeObjectURL(p.url); ed.pages.splice(ed.cur, 1); ed.cur = Math.max(0, ed.cur - 1); ed.dirty = true; drawPages(); }; btns.appendChild(rm); }
     if (p && p.type === "application/pdf") { const op = document.createElement("button"); op.className = "big"; op.textContent = t("openPdf"); op.onclick = () => window.open(p.url, "_blank"); btns.appendChild(op); }
@@ -841,15 +857,15 @@ async function openEditor(doc, startFiles = []) {
       try {
         if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
           let pp = null; try { pp = await loadPdfPages(f); } catch (e) { console.error(e); }
-          if (pp && pp.length) for (const p of pp) { await renderPage(p); ed.pages.push(p); }
+          if (pp && pp.length) { for (const p of pp) { await renderPage(p); ed.pages.push(p); } if (pp.total > pp.length) toast(t("pageLimit", { n: pp.length })); }
           else ed.pages.push({ blob: f, type: "application/pdf", thumb: null, url: URL.createObjectURL(f) });
         }
-        else { const p = { src: await loadImage(f), mode: "color", rot: 0 }; await renderPage(p); ed.pages.push(p); }
+        else { const p = { origBlob: f, mode: "color", rot: 0 }; await renderPage(p); ed.pages.push(p); }
         ed.cur = ed.pages.length - 1;
       } catch (e) { console.error(e); }
     }
     ed.busy = false; drawPages();
-    if (ocrEnabled() && !ed.ocrTried && ed.pages.some(pg => pg.src)) { ed.ocrTried = true; runOcr(); }
+    if (ocrEnabled() && !ed.ocrTried && ed.pages.some(pg => pg.origBlob)) { ed.ocrTried = true; runOcr(); }
   }
   async function save() {
     const name = q("#eName").value.trim();
@@ -872,11 +888,38 @@ async function openEditor(doc, startFiles = []) {
 /* ---------- share / download ---------- */
 const slug = s => (s || "document").replace(/[^\w\-. ]+/g, "").trim().replace(/\s+/g, "_").slice(0, 60) || "document";
 const extOf = type => type === "application/pdf" ? "pdf" : "jpg";
-function filesOf(ids) {
+async function docToPdf(d) {
+  const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+  const put = x => { const u = typeof x === "string" ? enc.encode(x) : x; parts.push(u); len += u.length; };
+  const n = d.pages.length, dims = [];
+  for (const pg of d.pages) { const bm = await createImageBitmap(pg.blob); dims.push([bm.width, bm.height]); bm.close(); }
+  put("%PDF-1.4\n");
+  const obj = (id, body) => { offs[id] = len; put(id + " 0 obj\n" + body + "\nendobj\n"); };
+  obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2, "<< /Type /Pages /Count " + n + " /Kids [" + d.pages.map((_, i) => (3 + 3 * i) + " 0 R").join(" ") + "] >>");
+  for (let i = 0; i < n; i++) {
+    const [w, h] = dims[i], k = 842 / Math.max(w, h), W = (w * k).toFixed(2), H = (h * k).toFixed(2), jpg = new Uint8Array(await d.pages[i].blob.arrayBuffer());
+    obj(3 + 3 * i, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] /Resources << /XObject << /Im0 " + (5 + 3 * i) + " 0 R >> >> /Contents " + (4 + 3 * i) + " 0 R >>");
+    const c = "q " + W + " 0 0 " + H + " 0 0 cm /Im0 Do Q";
+    obj(4 + 3 * i, "<< /Length " + c.length + " >>\nstream\n" + c + "\nendstream");
+    offs[5 + 3 * i] = len;
+    put((5 + 3 * i) + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + w + " /Height " + h + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpg.length + " >>\nstream\n"); put(jpg); put("\nendstream\nendobj\n");
+  }
+  const total = 3 + 3 * n, xref = len;
+  put("xref\n0 " + total + "\n0000000000 65535 f \n");
+  for (let i = 1; i < total; i++) put(String(offs[i]).padStart(10, "0") + " 00000 n \n");
+  put("trailer\n<< /Size " + total + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+  return new Blob(parts, { type: "application/pdf" });
+}
+async function filesOf(ids) {
   const out = [];
   for (const id of ids) {
-    const d = docs.find(x => x.id === id); if (!d) continue;
-    d.pages.forEach((p, i) => out.push(new File([p.blob], slug(d.name + (d.number ? "_" + d.number : "")) + (d.pages.length > 1 ? "_p" + (i + 1) : "") + "." + extOf(p.type), { type: p.type })));
+    const d = docs.find(x => x.id === id); if (!d || !d.pages.length) continue;
+    const base = slug(d.name + (d.number ? "_" + d.number : ""));
+    if (d.pages.every(p => p.type !== "application/pdf")) {
+      try { out.push(new File([await docToPdf(d)], base + ".pdf", { type: "application/pdf" })); continue; } catch (e) { console.error(e); }
+    }
+    d.pages.forEach((p, i) => out.push(new File([p.blob], base + (d.pages.length > 1 ? "_p" + (i + 1) : "") + "." + extOf(p.type), { type: p.type })));
   }
   return out;
 }
@@ -890,7 +933,7 @@ async function shareFiles(files, title) {
   } catch (e) { if (e && e.name === "AbortError") return; }
   await download(files); toast(t("shareFail"));
 }
-const shareDocs = ids => shareFiles(filesOf(ids), "CrewVault");
+const shareDocs = async ids => shareFiles(await filesOf(ids), "CrewVault");
 
 /* ---------- print / PDF list ---------- */
 function printList() {
