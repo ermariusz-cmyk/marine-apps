@@ -167,6 +167,10 @@ h1.large{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:4px 0 12px;
 .toggle::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .2s}
 .toggle[aria-checked="true"]{background:var(--ok)}
 .toggle[aria-checked="true"]::after{transform:translateX(20px)}
+.ocr{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+.ocr .bar{height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
+.ocr .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.f[data-auto]>label::after{content:" ✦";color:var(--accent);font-size:12px}
 .btnrow{display:flex;gap:10px;margin-bottom:12px}
 .big{flex:1;min-height:48px;border-radius:12px;background:var(--card);color:var(--accent);font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
 .big.danger{color:var(--bad)}
@@ -247,6 +251,7 @@ const TX = {
     sort: "Sort", all: "All", cat_flag: "Flag", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Other",
     sort_expiry: "Expiry date", sort_name: "Name", sort_cat: "Category", sort_issuer: "Issued by", sort_issued: "Issue date",
     emptyTitle: "No documents yet", emptyText: "Tap + to scan your first certificate.", noMatch: "Nothing matches",
+    ocrReading: "Reading the document…", ocrDone: "Details read from the scan. Check the fields marked ✦.", ocrNone: "No details found. Rotate the scan or enter them by hand.", ocrAgain: "Read details", ocrSetting: "Read details from scans", ocrNote: "Recognition runs on this device. Nothing is uploaded.", ocrFail: "Reading is not available here",
     selAll: "Select all", shareAllN: "Share all ({n})", shareShown: "Share shown ({n})", selectDocs: "Select documents…", share: "Share", shareN: "Share ({n})", shareAll: "Share all", print: "Print",
     add: "Add document", takePhoto: "Take photo", chooseFile: "Choose photo or PDF", manual: "Enter details only",
     newDoc: "New document", docTitle: "Document", f_name: "Name", f_cat: "Category", f_number: "Number", f_issued: "Issued", f_expiry: "Expires",
@@ -268,6 +273,7 @@ const TX = {
     sort: "Sortuj", all: "Wszystko", cat_flag: "Bandera", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Inne",
     sort_expiry: "Data ważności", sort_name: "Nazwa", sort_cat: "Kategoria", sort_issuer: "Wystawca", sort_issued: "Data wydania",
     emptyTitle: "Brak dokumentów", emptyText: "Dotknij +, aby zeskanować pierwszy certyfikat.", noMatch: "Brak wyników",
+    ocrReading: "Odczytuję dokument…", ocrDone: "Dane odczytane ze skanu. Sprawdź pola oznaczone ✦.", ocrNone: "Nie znaleziono danych. Obróć skan lub wpisz je ręcznie.", ocrAgain: "Odczytaj dane", ocrSetting: "Odczyt danych ze skanów", ocrNote: "Rozpoznawanie działa na tym urządzeniu. Nic nie jest wysyłane.", ocrFail: "Odczyt nie jest tu dostępny",
     selAll: "Zaznacz wszystko", shareAllN: "Udostępnij wszystkie ({n})", shareShown: "Udostępnij widoczne ({n})", selectDocs: "Wybierz dokumenty…", share: "Udostępnij", shareN: "Udostępnij ({n})", shareAll: "Udostępnij wszystkie", print: "Drukuj",
     add: "Dodaj dokument", takePhoto: "Zrób zdjęcie", chooseFile: "Wybierz zdjęcie lub PDF", manual: "Wpisz tylko dane",
     newDoc: "Nowy dokument", docTitle: "Dokument", f_name: "Nazwa", f_cat: "Kategoria", f_number: "Numer", f_issued: "Wydano", f_expiry: "Ważny do",
@@ -394,7 +400,7 @@ function thumbOf(cv) {
   c.getContext("2d").drawImage(cv, 0, 0, c.width, c.height);
   return c.toDataURL("image/jpeg", 0.7);
 }
-async function renderPage(p) {
+function pageCanvas(p, mode) {
   const sw = p.src.naturalWidth || p.src.width, sh = p.src.naturalHeight || p.src.height, k = Math.min(1, MAXD / Math.max(sw, sh));
   const w = Math.round(sw * k), h = Math.round(sh * k), rot = p.rot % 360, swap = rot === 90 || rot === 270;
   const cv = document.createElement("canvas"); cv.width = swap ? h : w; cv.height = swap ? w : h;
@@ -402,11 +408,130 @@ async function renderPage(p) {
   ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.translate(cv.width / 2, cv.height / 2); ctx.rotate(rot * Math.PI / 180); ctx.drawImage(p.src, -w / 2, -h / 2, w, h);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  if (p.mode !== "orig") applyFilter(ctx, cv.width, cv.height, p.mode);
+  if (mode !== "orig") applyFilter(ctx, cv.width, cv.height, mode);
+  return cv;
+}
+async function renderPage(p) {
+  const cv = pageCanvas(p, p.mode);
   p.blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.86));
   p.type = "image/jpeg"; p.thumb = thumbOf(cv);
   if (p.url) URL.revokeObjectURL(p.url);
   p.url = URL.createObjectURL(p.blob);
+}
+
+/* ---------- reading details from a scan (text recognition runs on this device) ---------- */
+const MONTHS = { jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12,
+  sty: 1, stycznia: 1, lut: 2, lutego: 2, marca: 3, kwi: 4, kwietnia: 4, maj: 5, maja: 5, cze: 6, czerwca: 6, lip: 7, lipca: 7, sie: 8, sierpnia: 8, wrz: 9, wrzesnia: 9, "września": 9, paz: 10, "paź": 10, pazdziernika: 10, "października": 10, lis: 11, listopada: 11, gru: 12, grudnia: 12 };
+const pad2 = n => String(n).padStart(2, "0");
+function mkIso(y, m, d) { y = +y; m = +m; d = +d; if (y < 100) y += y > 60 ? 1900 : 2000; return (y >= 1950 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) ? y + "-" + pad2(m) + "-" + pad2(d) : null; }
+function findDates(line) {
+  const out = [], taken = [];
+  const add = (idx, len, iso) => { if (!iso || taken.some(([a, b]) => idx < b && idx + len > a)) return; taken.push([idx, idx + len]); out.push({ iso, idx }); };
+  let m;
+  const r1 = /(?<!\d)(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})(?!\d)/g; while ((m = r1.exec(line))) add(m.index, m[0].length, mkIso(m[1], m[2], m[3]));
+  const r2 = /(?<!\d)(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}|\d{2})(?!\d)/g;
+  while ((m = r2.exec(line))) { let d = +m[1], mo = +m[2]; if (mo > 12 && d <= 12) [d, mo] = [mo, d]; add(m.index, m[0].length, mkIso(m[3], mo, d)); }
+  const r3 = /(?<!\d)(\d{1,2})(?:st|nd|rd|th)?[\s.\-]*([A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]{3,12})\.?[\s,.\-]*(\d{4})(?!\d)/g;
+  while ((m = r3.exec(line))) { const mo = MONTHS[m[2].toLowerCase()]; if (mo) add(m.index, m[0].length, mkIso(m[3], mo, m[1])); }
+  const r4 = /\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})(?!\d)/g;
+  while ((m = r4.exec(line))) { const mo = MONTHS[m[1].toLowerCase()]; if (mo) add(m.index, m[0].length, mkIso(m[3], mo, m[2])); }
+  return out.sort((a, b) => a.idx - b.idx);
+}
+const TITLE_RULES = [
+  [/dynamic positioning.*(advanced)|dp advanced/i, "DP Advanced Course"], [/dynamic positioning.*(simulator)|dp simulator/i, "DP Simulator Course"],
+  [/dynamic positioning|dp induction|\bdp\b.*induction/i, "DP Induction"],
+  [/podstawowe szkolenie.{0,40}bezpiecz/i, "STCW Basic Safety Training"], [/zaawansowane.{0,30}pożar/i, "Advanced Fire Fighting"],
+  [/advanced fire ?fighting/i, "Advanced Fire Fighting"], [/survival craft|pscrb|rescue boats/i, "Proficiency in Survival Craft and Rescue Boats"],
+  [/medical first aid/i, "Medical First Aid"], [/medical care/i, "Medical Care"],
+  [/basic safety|personal survival techniques|fire prevention and fire fighting|elementary first aid|personal safety and social/i, "STCW Basic Safety Training"],
+  [/\bgmdss\b/i, "GMDSS Operator Certificate"], [/\becdis\b/i, "ECDIS"], [/bridge resource|\bbrm\b/i, "Bridge Resource Management"],
+  [/ship security officer|\bsso\b/i, "Ship Security Officer"], [/security awareness/i, "Security Awareness"],
+  [/seafarer'?s? medical|medical (certificate|examination|fitness)|\beng ?1\b|\bpeme\b|orzeczenie lekarskie/i, "Medical Certificate"],
+  [/seaman'?s? (book|discharge)|seafarer'?s? (identity|book)|discharge book|książeczka żeglarska/i, "Seaman's Book"],
+  [/passport|paszport/i, "Passport"],
+  [/endorsement|recognition of certificate|attestation of recognition/i, "Flag State Endorsement"],
+  [/certificate of competen(cy|ce)|certificate of proficiency/i, "Certificate of Competency"]
+];
+function parseCertificate(raw) {
+  const text = String(raw || "").replace(/\r/g, "").replace(/[|_~]+/g, " ").replace(/(\d)[Oo](?=\d)/g, "$10");
+  const lines = text.split("\n").map(l => l.replace(/\s+/g, " ").trim()).filter(l => l.length > 1);
+  const res = {}, low = text.toLowerCase();
+  // dates
+  const EXP = /valid (?:until|to|till|thru|through|for)|expir|until|ważn\w* do|termin ważności|revalidat|renewal|due date|next (?:renewal|revalidation)/i;
+  const ISS = /issu|dated|date of|wyd|granted|awarded|completed|signed|date\s*[:.]/i;
+  const BIRTH = /birth|born|d\.?o\.?b\b|urodz|\bur\./i;
+  const iss = [], exp = [], unk = [];
+  lines.forEach((line, li) => {
+    for (const d of findDates(line)) {
+      let ctx = line.slice(Math.max(0, d.idx - 45), d.idx);
+      if (!/[a-zA-Ząćęłńóśźż]/.test(ctx) && li > 0) ctx = lines[li - 1] + " " + ctx;
+      if (BIRTH.test(ctx)) continue;
+      if (EXP.test(ctx)) exp.push(d.iso); else if (ISS.test(ctx)) iss.push(d.iso); else unk.push(d.iso);
+    }
+  });
+  const sorted = a => [...a].sort();
+  if (iss.length) res.issued = sorted(iss)[0];
+  if (exp.length) res.expiry = sorted(exp)[exp.length - 1];
+  const rest = sorted(unk);
+  if (!res.issued && !res.expiry && rest.length >= 2) { res.issued = rest[0]; res.expiry = rest[rest.length - 1]; }
+  else if (!res.issued && !res.expiry && rest.length === 1) res.issued = rest[0];
+  else if (res.issued && !res.expiry) { const later = rest.filter(x => x > res.issued); if (later.length) res.expiry = later[later.length - 1]; }
+  else if (res.expiry && !res.issued) { const earlier = rest.filter(x => x < res.expiry); if (earlier.length) res.issued = earlier[0]; }
+  if (/no expiry|does not expire|unlimited validity|valid for life|permanent|bezterminow|nie wygasa|without (?:an )?expiry/i.test(text) && !res.expiry) res.noExpiry = true;
+  // number
+  const okNum = v => v && /\d/.test(v) && v.length >= 4 && v.length <= 26 && !/^\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}$/.test(v);
+  const clean = v => v && v.replace(/[.,;:]+$/, "");
+  const numRes = [
+    /(?:certificate|cert\.?|document|doc\.?|licen[cs]e|passport|seaman'?s?\s*book|seafarer'?s?\s*(?:id|identity)|endorsement|reference|ref\.?|serial|card|book)\s*(?:no\.?|number|nr\.?|num\.?|#)\s*[:.\-]?\s*([A-Z0-9][A-Z0-9\/\-.]{3,24})/i,
+    /(?:\bno\.?|\bnr\.?|\bnumber|\bnumer|\bnº|\b№)\s*[:.\-]?\s*([A-Z0-9][A-Z0-9\/\-.]{3,24})/i
+  ];
+  outer: for (const re of numRes) for (const l of lines) { const m = l.match(re); if (m && okNum(clean(m[1]))) { res.number = clean(m[1]); break outer; } }
+  // issuer
+  for (let i = 0; i < lines.length && !res.issuer; i++) {
+    const m = lines[i].match(/(?:issued by|issuing (?:authority|body|state|office)|authority|issued at)\s*[:\-]\s*(.*)$/i);
+    if (m) { const v = (m[1] || lines[i + 1] || "").trim(); if (v.length > 3 && !/^\d/.test(v)) res.issuer = v.slice(0, 70); }
+  }
+  if (!res.issuer) {
+    const ORG = /(maritime|marine|shipping|port)\s+(authority|administration|agency|department|directorate|office)|ministry|administration|authority|academy|institute|university|college|training (?:centre|center)|school|registry|directorate|nautical institute|lloyd'?s|dnv|bureau veritas|american bureau|classification|urząd|akademia|szkoła|ministerstwo/i;
+    const COUNTRY = /republic of|kingdom of|rzeczpospolita/i;
+    const okLine = l => l.length >= 6 && l.length <= 80 && (l.match(/\d/g) || []).length < 4;
+    const top = lines.slice(0, 14);
+    const cand = top.find(l => ORG.test(l) && okLine(l)) || top.find(l => COUNTRY.test(l) && okLine(l));
+    if (cand) res.issuer = cand.replace(/^[^A-Za-zĄĆĘŁŃÓŚŹŻ]+/, "").slice(0, 70);
+  }
+  // document name
+  const rule = TITLE_RULES.find(([re]) => re.test(text));
+  if (rule) res.name = rule[1];
+  else {
+    const KW = /certificate|endorsement|licen[cs]e|attestation|diploma|course|training|certyfikat|świadectwo|zaświadczenie|dyplom/i;
+    const cand = lines.slice(0, 18).filter(l => KW.test(l) && l.length >= 8 && l.length <= 70 && (l.match(/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/g) || []).length / l.length > 0.7)
+      .sort((a, b) => (/certificate|świadectwo|certyfikat/i.test(b) ? 1 : 0) - (/certificate|świadectwo|certyfikat/i.test(a) ? 1 : 0))[0];
+    if (cand) res.name = cand.toLowerCase().replace(/(^|[\s\-\/(])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+  }
+  res.cat = suggestCat(res.name || "");
+  if (res.cat === "other") res.cat = suggestCat(low.slice(0, 900));
+  res.found = ["name", "number", "issued", "expiry", "issuer"].filter(k => res[k]);
+  if (res.noExpiry) res.found.push("expiry");
+  return res;
+}
+
+let ocrWorker = null, ocrProgress = null;
+const ocrEnabled = () => lsGet("crewvault.ocr") !== "0";
+function loadScript(src) { return new Promise((res, rej) => { const e = document.createElement("script"); e.src = src; e.onload = res; e.onerror = () => rej(new Error("script")); document.head.appendChild(e); }); }
+async function getOcrWorker() {
+  if (!window.Tesseract) await loadScript(new URL("ocr/tesseract.min.js", document.baseURI).href);
+  if (!ocrWorker) {
+    const base = new URL("ocr/", document.baseURI).href;
+    ocrWorker = await Tesseract.createWorker("eng+pol", 1, { workerPath: base + "worker.min.js", corePath: base, langPath: base, gzip: true, logger: m => { if (ocrProgress && m.status === "recognizing text") ocrProgress(m.progress); } });
+  }
+  return ocrWorker;
+}
+async function readScan(p, onProgress) {
+  ocrProgress = onProgress;
+  const w = await getOcrWorker();
+  const { data } = await w.recognize(pageCanvas(p, "gray"));
+  ocrProgress = null;
+  return { text: data.text, parsed: parseCertificate(data.text) };
 }
 
 /* ---------- state ---------- */
@@ -551,6 +676,7 @@ const SVG = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  scan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9h8M8 12.5h8M8 16h5"/></svg>',
   image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/></svg>'
 };
 
@@ -568,7 +694,7 @@ async function openEditor(doc, startFiles = []) {
     title: isNew ? t("newDoc") : t("docTitle"), left: { text: t("cancel"), fn: () => tryClose() }, right: { text: t("save"), fn: () => save(), bold: true }, onClose: () => tryClose(),
     body: api => {
       api.body.innerHTML =
-        `<div class="pv" id="edPv"></div><div class="strip" id="edStrip"></div><div class="ctrl" id="edCtrl"></div>` +
+        `<div class="pv" id="edPv"></div><div class="strip" id="edStrip"></div><div class="ctrl" id="edCtrl"></div><div class="ocr" id="edOcr" hidden></div>` +
         `<div class="form">` +
         `<div class="f"><label for="eName">${esc(t("f_name"))}</label><input id="eName" type="text" list="eHints" placeholder="${esc(t("namePh"))}" autocomplete="off" autocapitalize="sentences"><datalist id="eHints">${NAME_HINTS.map(h => `<option value="${esc(h)}">`).join("")}</datalist></div>` +
         `<div class="f"><label for="eCat">${esc(t("f_cat"))}</label><select id="eCat">${CATS.map(c => `<option value="${c.id}">${esc(catName(c.id))}</option>`).join("")}</select></div>` +
@@ -587,9 +713,28 @@ async function openEditor(doc, startFiles = []) {
     q("#eExp").value = doc.expiry || ""; q("#eBy").value = doc.issuer || ""; q("#eNotes").value = doc.notes || "";
     if (doc.noExpiry) { q("#eNoExp").setAttribute("aria-checked", "true"); q("#eExp").disabled = true; }
   } else q("#eCat").value = "other";
-  sh.body.addEventListener("input", () => { ed.dirty = true; });
+  sh.body.addEventListener("input", e => { ed.dirty = true; const f = e.target.closest && e.target.closest(".f"); if (f) f.removeAttribute("data-auto"); });
   q("#eName").addEventListener("input", e => { if (!ed.catTouched) q("#eCat").value = suggestCat(e.target.value); });
   q("#eCat").addEventListener("change", () => { ed.catTouched = true; });
+  const ocrBox = q("#edOcr");
+  function applyOcr(r) {
+    const set = (sel, val) => { const el = q(sel); if (!val) return; if (el.value && !el.closest(".f").hasAttribute("data-auto")) return; el.value = val; el.closest(".f").setAttribute("data-auto", "1"); };
+    set("#eName", r.name); set("#eNum", r.number); set("#eIss", r.issued); set("#eBy", r.issuer);
+    if (r.noExpiry) { q("#eNoExp").setAttribute("aria-checked", "true"); q("#eExp").disabled = true; q("#eExp").closest(".f").setAttribute("data-auto", "1"); }
+    else set("#eExp", r.expiry);
+    if (!ed.catTouched && (r.name || r.cat !== "other")) q("#eCat").value = r.cat;
+    ed.dirty = true;
+  }
+  async function runOcr(p) {
+    if (!p || !p.src || ed.reading) return;
+    ed.reading = true; ocrBox.hidden = false;
+    ocrBox.innerHTML = `<div>${esc(t("ocrReading"))}</div><div class="bar"><i></i></div>`;
+    try {
+      const out = await readScan(p, f => { const i = ocrBox.querySelector("i"); if (i) i.style.width = Math.round(f * 100) + "%"; });
+      if (out.parsed.found.length) { applyOcr(out.parsed); ocrBox.textContent = t("ocrDone"); } else ocrBox.textContent = t("ocrNone");
+    } catch (e) { console.error(e); ocrBox.textContent = t("ocrFail"); }
+    ed.reading = false;
+  }
   q("#eNoExp").onclick = e => { const on = e.currentTarget.getAttribute("aria-checked") !== "true"; e.currentTarget.setAttribute("aria-checked", String(on)); q("#eExp").disabled = on; ed.dirty = true; };
 
   function drawPages() {
@@ -616,7 +761,9 @@ async function openEditor(doc, startFiles = []) {
       });
       const rot = document.createElement("button"); rot.className = "ibtn"; rot.setAttribute("aria-label", t("rotate")); rot.innerHTML = SVG.rot;
       rot.onclick = async () => { if (ed.busy) return; p.rot = (p.rot + 90) % 360; ed.dirty = true; await rerender(p); };
-      ctrl.append(seg, rot);
+      const rd = document.createElement("button"); rd.className = "ibtn"; rd.setAttribute("aria-label", t("ocrAgain")); rd.innerHTML = SVG.scan;
+      rd.onclick = () => runOcr(p);
+      ctrl.append(seg, rot, rd);
     }
     const btns = q("#edBtns"); btns.innerHTML = "";
     if (p) { const rm = document.createElement("button"); rm.className = "big danger"; rm.innerHTML = SVG.trash + esc(t("removePage"));
@@ -639,6 +786,7 @@ async function openEditor(doc, startFiles = []) {
       } catch (e) { console.error(e); }
     }
     ed.busy = false; drawPages();
+    if (ocrEnabled() && !ed.ocrTried) { const first = ed.pages.find(pg => pg.src); if (first) { ed.ocrTried = true; runOcr(first); } }
   }
   async function save() {
     const name = q("#eName").value.trim();
@@ -712,9 +860,11 @@ async function importBackup(file) {
 function openSettings() {
   const sh = openSheet({ title: t("settings"), right: { text: t("done"), fn: () => sh.close(), bold: true }, body: api => {
     api.body.innerHTML =
+      `<div class="hd">${esc(t("ocrSetting"))}</div><div class="form"><div class="f"><label id="lOcr" style="width:auto">${esc(t("ocrSetting"))}</label><div class="sw"><button class="toggle" id="sOcr" role="switch" aria-checked="${ocrEnabled()}" aria-labelledby="lOcr"></button></div></div></div><div class="note" style="margin-top:-8px">${esc(t("ocrNote"))}</div>` +
       `<div class="hd">${esc(t("backup"))}</div><div class="btnrow"><button class="big" id="sExp">${esc(t("exportBackup"))}</button><button class="big" id="sImp">${esc(t("importBackup"))}</button></div><div class="note">${esc(t("backupNote"))}</div>` +
       `<div class="hd">${esc(t("privacy"))}</div><div class="note" style="margin-top:0">${esc(t("privacyText"))}</div>` +
       `<div class="hd">${esc(t("storage"))}</div><div class="note" style="margin-top:0">${esc(t("storageText", { n: docs.length }))}</div>`;
+    api.body.querySelector("#sOcr").onclick = e => { const on = e.currentTarget.getAttribute("aria-checked") !== "true"; e.currentTarget.setAttribute("aria-checked", String(on)); lsSet("crewvault.ocr", on ? "1" : "0"); };
     api.body.querySelector("#sExp").onclick = () => exportBackup();
     api.body.querySelector("#sImp").onclick = () => { const i = $("#inBackup"); i.value = ""; i.onchange = () => i.files[0] && importBackup(i.files[0]); i.click(); };
   }});
