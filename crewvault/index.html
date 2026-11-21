@@ -72,24 +72,27 @@ h1.large{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:4px 0 12px;
 .meta label{display:flex;align-items:center;gap:6px}
 .meta select{background:none;border:0;color:var(--accent);font-size:13px;font-weight:600;-webkit-appearance:none;appearance:none;padding:4px 2px;cursor:pointer}
 
-.group{background:var(--card);border-radius:12px;overflow:hidden}
-.row{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 12px;min-height:68px;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
-.row+.row::before{content:"";position:absolute;left:68px;right:0;top:0;height:1px;background:var(--line)}
-.row:active{background:var(--fill)}
-.thumb{width:44px;height:44px;border-radius:8px;background:var(--fill);overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid var(--line)}
-.thumb img{width:100%;height:100%;object-fit:cover}
-.thumb svg{width:22px;height:22px}
-.rtxt{flex:1;min-width:0}
-.r1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r2{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
-.dot{width:8px;height:8px;border-radius:50%;flex:none}
-.r3{font-size:13px;font-weight:600;margin-top:1px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.tile{background:var(--card);border-radius:16px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;
+  box-shadow:0 1px 2px rgba(0,0,0,.06);-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.tile:active{transform:scale(.97)}
+.pic{aspect-ratio:4/3;background:var(--fill);position:relative;display:flex;align-items:center;justify-content:center;color:var(--muted);overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.badge{position:absolute;left:8px;top:8px;display:flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 8px;border-radius:12px;font-size:12px;font-weight:600;
+  background:var(--bar);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--ink)}
+.badge svg{width:14px;height:14px;flex:none}
+.ph-ic{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:var(--card)}
+.ph-ic svg{width:34px;height:34px}
+.tx{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.r1{font-weight:600;font-size:15px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
+.r2{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.3em}
+.r3{font-size:12.5px;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:6px}
+.r3 svg{width:15px;height:15px;flex:none}
 .st-ok{color:var(--ok)} .st-warn{color:var(--warn)} .st-bad{color:var(--bad)} .st-none{color:var(--none)}
-.chev{color:var(--line);font-size:22px;flex:none;line-height:1}
-.chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);flex:none;display:none;align-items:center;justify-content:center;color:transparent}
+.chk{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.28);display:none;align-items:center;justify-content:center;color:transparent}
 .selecting .chk{display:flex}
-.selecting .chev{display:none}
-.row.sel .chk{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tile.sel{outline:3px solid var(--accent);outline-offset:-3px}
+.tile.sel .chk{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .chk svg{width:14px;height:14px}
 
 #empty{text-align:center;padding:56px 24px;color:var(--muted)}
@@ -122,8 +125,9 @@ h1.large{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:4px 0 12px;
 .action{background:none;align-items:flex-end;padding:0 8px calc(8px + env(safe-area-inset-bottom))}
 .action .sheet{background:none;box-shadow:none;border-radius:0;animation:up .25s cubic-bezier(.2,.8,.2,1);gap:8px;overflow:visible;max-width:520px}
 .action .grp{background:var(--card);border-radius:14px;overflow:hidden}
-.action .grp button{display:block;width:100%;height:56px;color:var(--accent);font-size:19px;border-top:1px solid var(--line)}
+.action .grp button{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:56px;color:var(--accent);font-size:19px;border-top:1px solid var(--line)}
 .action .grp button:first-child{border-top:0}
+.action .grp button svg{width:22px;height:22px}
 .action .grp button:active{background:var(--fill)}
 .action .grp.cancel button{font-weight:600}
 @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
@@ -206,7 +210,7 @@ h1.large{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:4px 0 12px;
   <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" data-iph="search" placeholder="Search" autocomplete="off"></div>
   <div class="seg" id="seg" role="group"></div>
   <div class="meta"><span id="count"></span><label><span data-i="sort">Sort</span><select id="sort"></select></label></div>
-  <div class="group" id="list"></div>
+  <div class="tiles" id="list"></div>
   <div id="empty" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
     <h2 data-i="emptyTitle">No documents yet</h2>
@@ -383,7 +387,7 @@ function applyFilter(ctx, w, h, mode) {
   ctx.putImageData(img, 0, 0);
 }
 function thumbOf(cv) {
-  const s = 180 / Math.max(cv.width, cv.height), c = document.createElement("canvas");
+  const s = 480 / Math.max(cv.width, cv.height), c = document.createElement("canvas");
   c.width = Math.max(1, Math.round(cv.width * s)); c.height = Math.max(1, Math.round(cv.height * s));
   c.getContext("2d").drawImage(cv, 0, 0, c.width, c.height);
   return c.toDataURL("image/jpeg", 0.7);
@@ -426,6 +430,23 @@ function visibleDocs() {
 
 /* ---------- main list ---------- */
 const ICON_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
+const ST = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+const CAT_ICON = {
+  flag: ST('<path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/>'),
+  stcw: ST('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6"/><path d="M5.6 5.6l3.8 3.8M14.6 14.6l3.8 3.8M18.4 5.6l-3.8 3.8M9.4 14.6l-3.8 3.8"/>'),
+  imca: ST('<circle cx="12" cy="5" r="2.5"/><path d="M12 7.5V21M8 11h8M5 15a7 7 0 0 0 14 0"/>'),
+  other: ST('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>')
+};
+const ST_ICON = {
+  ok: ST('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>'),
+  warn: ST('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  bad: ST('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/>'),
+  none: ST('<path d="M8 9c-2 0-4 1.5-4 3s2 3 4 3c4 0 4-6 8-6 2 0 4 1.5 4 3s-2 3-4 3c-4 0-4-6-8-6z"/>')
+};
+const ICON_CAM = ST('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/>');
+const ICON_IMG = ST('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/>');
+const ICON_PEN = ST('<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>');
+const catIcon = id => CAT_ICON[CAT_ICON[id] ? id : "other"];
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
 
 function render() {
@@ -450,12 +471,12 @@ function render() {
   if (!list.length) { $("#empty h2").textContent = docs.length ? t("noMatch") : t("emptyTitle"); $("#empty p").hidden = !!docs.length; }
   for (const d of list) {
     const st = status(d), row = document.createElement("div");
-    row.className = "row" + (selected.has(d.id) ? " sel" : ""); row.dataset.id = d.id;
+    row.className = "tile" + (selected.has(d.id) ? " sel" : ""); row.dataset.id = d.id;
     const sub = [d.issuer, d.number && ("№ " + d.number)].filter(Boolean).join(" · ");
-    const first = d.pages && d.pages[0];
-    row.innerHTML = `<div class="chk">${ICON_CHECK}</div><div class="thumb">${d.thumb ? `<img alt="" src="${d.thumb}">` : ICON_DOC}</div>` +
-      `<div class="rtxt"><div class="r1">${esc(d.name)}</div><div class="r2"><span class="dot" style="background:${catColor(d.cat)}"></span>${esc(catName(d.cat))}${sub ? " · " + esc(sub) : ""}</div>` +
-      `<div class="r3 st-${st.cls}">${esc(st.txt)}${d.expiry && !d.noExpiry ? " · " + esc(fmtDate(d.expiry)) : ""}</div></div><div class="chev">›</div>`;
+    row.innerHTML = `<div class="pic">${d.thumb ? `<img alt="" src="${d.thumb}">` : `<span class="ph-ic" style="color:${catColor(d.cat)}">${catIcon(d.cat)}</span>`}` +
+      `<span class="badge" style="--cc:${catColor(d.cat)}"><span style="color:${catColor(d.cat)};display:flex">${catIcon(d.cat)}</span>${esc(catName(d.cat))}</span><span class="chk">${ICON_CHECK}</span></div>` +
+      `<div class="tx"><div class="r1">${esc(d.name)}</div><div class="r2">${esc(sub) || "&nbsp;"}</div>` +
+      `<div class="r3 st-${st.cls}">${ST_ICON[st.cls]}<span>${esc(st.txt)}</span></div></div>`;
     row.onclick = () => { if (selecting) { toggleSel(d.id, row); } else openEditor(d); };
     box.appendChild(row);
   }
@@ -484,7 +505,7 @@ function openSheet({ title, left, right, body, onClose, action }) {
 function actionSheet(buttons) {
   return openSheet({ action: true, body: api => {
     const g = document.createElement("div"); g.className = "grp";
-    buttons.forEach(b => { const e = document.createElement("button"); e.textContent = b.text; e.onclick = () => { api.close(); b.fn(); }; g.appendChild(e); });
+    buttons.forEach(b => { const e = document.createElement("button"); e.innerHTML = (b.icon || "") + "<span></span>"; e.lastChild.textContent = b.text; e.onclick = () => { api.close(); b.fn(); }; g.appendChild(e); });
     const c = document.createElement("div"); c.className = "grp cancel"; const cb = document.createElement("button"); cb.textContent = t("cancel"); cb.onclick = api.close; c.appendChild(cb);
     api.el.append(g, c);
   }});
@@ -516,9 +537,9 @@ function pick(kind) {
 const startAdd = async kind => { const files = await pick(kind); if (files.length) openEditor(null, files); };
 function addMenu() {
   actionSheet([
-    { text: t("takePhoto"), fn: () => startAdd("cam") },
-    { text: t("chooseFile"), fn: () => startAdd("file") },
-    { text: t("manual"), fn: () => openEditor(null, []) }
+    { icon: ICON_CAM, text: t("takePhoto"), fn: () => startAdd("cam") },
+    { icon: ICON_IMG, text: t("chooseFile"), fn: () => startAdd("file") },
+    { icon: ICON_PEN, text: t("manual"), fn: () => openEditor(null, []) }
   ]);
 }
 
@@ -582,7 +603,7 @@ async function openEditor(doc, startFiles = []) {
       b.innerHTML = pg.thumb ? `<img alt="" src="${pg.thumb}">` : "PDF"; b.onclick = () => { ed.cur = i; drawPages(); }; strip.appendChild(b);
     });
     const add = document.createElement("button"); add.className = "addp"; add.setAttribute("aria-label", t("addPage")); add.innerHTML = SVG.plus;
-    add.onclick = () => actionSheet([{ text: t("takePhoto"), fn: async () => addFiles(await pick("cam")) }, { text: t("chooseFile"), fn: async () => addFiles(await pick("file")) }]);
+    add.onclick = () => actionSheet([{ icon: ICON_CAM, text: t("takePhoto"), fn: async () => addFiles(await pick("cam")) }, { icon: ICON_IMG, text: t("chooseFile"), fn: async () => addFiles(await pick("file")) }]);
     strip.appendChild(add);
     ctrl.innerHTML = ""; ctrl.hidden = !(p && p.src);
     if (p && p.src) {
