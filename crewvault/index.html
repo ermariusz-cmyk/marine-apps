@@ -199,8 +199,10 @@ h1.large{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:4px 0 12px;
     <div class="mini">CrewVault</div>
     <div class="nright">
       <button class="nbtn" id="bSelect" data-i="select">Select</button>
+      <button class="nbtn" id="bShare" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
       <button class="nbtn" id="bPrint" aria-label="Print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6M7 18H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg></button>
-      <button class="nbtn" id="bSet" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
+      <button class="nbtn" id="bLang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
+      <button class="nbtn" id="bSet" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M18.78 10.26 L21.49 10.56 L21.49 13.44 L18.78 13.74 L18.03 15.56 L19.73 17.69 L17.69 19.73 L15.56 18.03 L13.74 18.78 L13.44 21.49 L10.56 21.49 L10.26 18.78 L8.44 18.03 L6.31 19.73 L4.27 17.69 L5.97 15.56 L5.22 13.74 L2.51 13.44 L2.51 10.56 L5.22 10.26 L5.97 8.44 L4.27 6.31 L6.31 4.27 L8.44 5.97 L10.26 5.22 L10.56 2.51 L13.44 2.51 L13.74 5.22 L15.56 5.97 L17.69 4.27 L19.73 6.31 L18.03 8.44Z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
   </div>
 </header>
@@ -245,7 +247,7 @@ const TX = {
     sort: "Sort", all: "All", cat_flag: "Flag", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Other",
     sort_expiry: "Expiry date", sort_name: "Name", sort_cat: "Category", sort_issuer: "Issued by", sort_issued: "Issue date",
     emptyTitle: "No documents yet", emptyText: "Tap + to scan your first certificate.", noMatch: "Nothing matches",
-    selAll: "Select all", share: "Share", shareN: "Share ({n})", shareAll: "Share all", print: "Print",
+    selAll: "Select all", shareAllN: "Share all ({n})", shareShown: "Share shown ({n})", selectDocs: "Select documents…", share: "Share", shareN: "Share ({n})", shareAll: "Share all", print: "Print",
     add: "Add document", takePhoto: "Take photo", chooseFile: "Choose photo or PDF", manual: "Enter details only",
     newDoc: "New document", docTitle: "Document", f_name: "Name", f_cat: "Category", f_number: "Number", f_issued: "Issued", f_expiry: "Expires",
     f_noexp: "No expiry", f_issuer: "Issued by", f_notes: "Notes", notesPh: "Notes", optional: "Optional", namePh: "e.g. STCW Basic Safety",
@@ -254,7 +256,7 @@ const TX = {
     st_expired: "Expired {n} d ago", st_expired1: "Expired today", st_soon: "Expires in {n} d", st_valid: "Valid, {n} d left", st_none: "No expiry", st_nodate: "No expiry date",
     confirmDelete: "Delete this document?", confirmYes: "Delete", discard: "Discard changes?", discardYes: "Discard", keep: "Keep editing",
     nameRequired: "Enter a name", saved: "Saved", deleted: "Deleted", nothing: "Nothing to share",
-    shareFail: "Sharing is not available here. Files were downloaded instead.", settings: "Settings", language: "Language", auto: "Auto",
+    shareFail: "Sharing is not available here. Files were downloaded instead.", settings: "Settings", language: "Language", auto: "Device language",
     backup: "Backup", exportBackup: "Export backup", importBackup: "Import backup", imported: "Imported {n} documents", importFail: "Could not read this backup file",
     backupNote: "A backup is one file with all documents and scans. Keep it in iCloud Drive or send it to yourself.",
     privacy: "Privacy", privacyText: "Everything is stored on this device only. Nothing is uploaded. Backups are not encrypted yet; PIN lock, encryption and Google Drive sync are planned next.",
@@ -263,10 +265,10 @@ const TX = {
   },
   pl: {
     apps: "Aplikacje", documents: "Dokumenty", search: "Szukaj", select: "Wybierz", done: "Gotowe", cancel: "Anuluj", save: "Zapisz", delete: "Usuń",
-    sort: "Sortuj", all: "Wszystkie", cat_flag: "Bandera", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Inne",
+    sort: "Sortuj", all: "Wszystko", cat_flag: "Bandera", cat_stcw: "STCW", cat_imca: "IMCA", cat_other: "Inne",
     sort_expiry: "Data ważności", sort_name: "Nazwa", sort_cat: "Kategoria", sort_issuer: "Wystawca", sort_issued: "Data wydania",
     emptyTitle: "Brak dokumentów", emptyText: "Dotknij +, aby zeskanować pierwszy certyfikat.", noMatch: "Brak wyników",
-    selAll: "Zaznacz wszystko", share: "Udostępnij", shareN: "Udostępnij ({n})", shareAll: "Udostępnij wszystkie", print: "Drukuj",
+    selAll: "Zaznacz wszystko", shareAllN: "Udostępnij wszystkie ({n})", shareShown: "Udostępnij widoczne ({n})", selectDocs: "Wybierz dokumenty…", share: "Udostępnij", shareN: "Udostępnij ({n})", shareAll: "Udostępnij wszystkie", print: "Drukuj",
     add: "Dodaj dokument", takePhoto: "Zrób zdjęcie", chooseFile: "Wybierz zdjęcie lub PDF", manual: "Wpisz tylko dane",
     newDoc: "Nowy dokument", docTitle: "Dokument", f_name: "Nazwa", f_cat: "Kategoria", f_number: "Numer", f_issued: "Wydano", f_expiry: "Ważny do",
     f_noexp: "Bezterminowy", f_issuer: "Wystawca", f_notes: "Notatki", notesPh: "Notatki", optional: "Opcjonalnie", namePh: "np. STCW Basic Safety",
@@ -275,7 +277,7 @@ const TX = {
     st_expired: "Wygasł {n} dni temu", st_expired1: "Wygasa dzisiaj", st_soon: "Wygasa za {n} dni", st_valid: "Ważny, zostało {n} dni", st_none: "Bezterminowy", st_nodate: "Brak daty ważności",
     confirmDelete: "Usunąć ten dokument?", confirmYes: "Usuń", discard: "Odrzucić zmiany?", discardYes: "Odrzuć", keep: "Wróć do edycji",
     nameRequired: "Wpisz nazwę", saved: "Zapisano", deleted: "Usunięto", nothing: "Nie ma czego udostępnić",
-    shareFail: "Udostępnianie nie działa w tej przeglądarce. Pliki zostały pobrane.", settings: "Ustawienia", language: "Język", auto: "Auto",
+    shareFail: "Udostępnianie nie działa w tej przeglądarce. Pliki zostały pobrane.", settings: "Ustawienia", language: "Język", auto: "Język urządzenia",
     backup: "Kopia zapasowa", exportBackup: "Eksportuj kopię", importBackup: "Importuj kopię", imported: "Zaimportowano dokumentów: {n}", importFail: "Nie można odczytać tego pliku",
     backupNote: "Kopia to jeden plik ze wszystkimi dokumentami i skanami. Trzymaj go w iCloud Drive albo wyślij sobie.",
     privacy: "Prywatność", privacyText: "Wszystko jest zapisane tylko na tym urządzeniu. Nic nie jest wysyłane. Kopie nie są jeszcze szyfrowane; blokada PIN, szyfrowanie i Dysk Google są w planach.",
@@ -709,16 +711,27 @@ async function importBackup(file) {
 }
 function openSettings() {
   const sh = openSheet({ title: t("settings"), right: { text: t("done"), fn: () => sh.close(), bold: true }, body: api => {
-    const cur = lsGet("crewvault.lang") || "auto";
     api.body.innerHTML =
-      `<div class="hd">${esc(t("language"))}</div><div class="seg" id="sLang">${[["auto", t("auto")], ["en", "English"], ["pl", "Polski"]].map(([v, n]) => `<button data-v="${v}" aria-pressed="${cur === v}">${esc(n)}</button>`).join("")}</div>` +
       `<div class="hd">${esc(t("backup"))}</div><div class="btnrow"><button class="big" id="sExp">${esc(t("exportBackup"))}</button><button class="big" id="sImp">${esc(t("importBackup"))}</button></div><div class="note">${esc(t("backupNote"))}</div>` +
       `<div class="hd">${esc(t("privacy"))}</div><div class="note" style="margin-top:0">${esc(t("privacyText"))}</div>` +
       `<div class="hd">${esc(t("storage"))}</div><div class="note" style="margin-top:0">${esc(t("storageText", { n: docs.length }))}</div>`;
-    api.body.querySelectorAll("#sLang button").forEach(b => b.onclick = () => { lsSet("crewvault.lang", b.dataset.v); api.close(); render(); openSettings(); });
     api.body.querySelector("#sExp").onclick = () => exportBackup();
     api.body.querySelector("#sImp").onclick = () => { const i = $("#inBackup"); i.value = ""; i.onchange = () => i.files[0] && importBackup(i.files[0]); i.click(); };
   }});
+}
+
+/* ---------- share menu & language menu ---------- */
+function shareMenu() {
+  const all = docs.map(d => d.id), shown = visibleDocs().map(d => d.id), items = [];
+  if (all.length) items.push({ icon: SVG.share, text: t("shareAllN", { n: all.length }), fn: () => shareDocs(all) });
+  if (shown.length && shown.length !== all.length) items.push({ icon: SVG.share, text: t("shareShown", { n: shown.length }), fn: () => shareDocs(shown) });
+  if (all.length) items.push({ icon: ICON_CHECK, text: t("selectDocs"), fn: () => { selecting = true; selected.clear(); render(); } });
+  if (!items.length) { toast(t("nothing")); return; }
+  actionSheet(items);
+}
+function langMenu() {
+  const cur = lsGet("crewvault.lang") || "auto", mk = (v, n) => ({ text: (cur === v ? "✓ " : "") + n, fn: () => { lsSet("crewvault.lang", v); render(); } });
+  actionSheet([mk("pl", "Polski"), mk("en", "English"), mk("auto", t("auto"))]);
 }
 
 /* ---------- wire up ---------- */
@@ -729,6 +742,8 @@ $("#bSelect").onclick = () => { selecting = !selecting; selected.clear(); render
 $("#selAll").onclick = () => { const l = visibleDocs(); if (selected.size === l.length) selected.clear(); else l.forEach(d => selected.add(d.id)); render(); };
 $("#selShare").onclick = () => shareDocs([...selected]);
 $("#bPrint").onclick = printList;
+$("#bShare").onclick = shareMenu;
+$("#bLang").onclick = langMenu;
 $("#bSet").onclick = openSettings;
 addEventListener("scroll", () => $("#nav").classList.toggle("scrolled", scrollY > 38), { passive: true });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && sheetStack.length) sheetStack[sheetStack.length - 1].ov.dispatchEvent(new MouseEvent("mousedown", { bubbles: false })); });
